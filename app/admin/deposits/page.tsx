@@ -11,6 +11,8 @@ type Deposit = {
   network?: string | null
   payment_method?: string | null
   method?: string | null
+  screenshot_url?: string | null
+  screenshot?: string | null
 }
 
 type UserData = {
