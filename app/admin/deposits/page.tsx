@@ -13,6 +13,8 @@ type Deposit = {
   method?: string | null
   screenshot_url?: string | null
   screenshot?: string | null
+  created_at?: string | null
+  admin_note?: string | null
 }
 
 type UserData = {
