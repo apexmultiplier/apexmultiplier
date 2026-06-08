@@ -186,7 +186,7 @@ export default function AdminDepositsPage() {
                               <td className="py-3 px-3 text-zinc-400">{(deposit.payment_method || deposit.method || deposit.network) || '—'}</td>
                               <td className="py-3 px-3">
                                 {deposit.screenshot_url || deposit.screenshot ? (
-                                  <a href={deposit.screenshot_url || deposit.screenshot} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View</a>
+                                  <a href={deposit.screenshot_url || deposit.screenshot || "#"} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View</a>
                                 ) : (
                                   <span className="text-zinc-400">—</span>
                                 )}
