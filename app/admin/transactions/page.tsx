@@ -76,7 +76,7 @@ export default function TransactionsPage() {
     setError(null)
     try {
       const { data, error } = await supabase
-        .from<Tx>("transactions")
+        .from("transactions")
         .select("*")
         .order("created_at", { ascending: false })
 
