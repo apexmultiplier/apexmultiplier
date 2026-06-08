@@ -8,6 +8,7 @@ type Deposit = {
   email: string
   amount: number | string
   status: string
+  network?: string | null
 }
 
 type UserData = {
