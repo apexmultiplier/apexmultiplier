@@ -58,7 +58,9 @@ export default function BonusesPage() {
       )
       .subscribe()
 
-    return () => channel.unsubscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
