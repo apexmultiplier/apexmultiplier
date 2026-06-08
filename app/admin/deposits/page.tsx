@@ -9,6 +9,8 @@ type Deposit = {
   amount: number | string
   status: string
   network?: string | null
+  payment_method?: string | null
+  method?: string | null
 }
 
 type UserData = {
