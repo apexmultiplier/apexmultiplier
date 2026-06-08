@@ -1,0 +1,299 @@
+﻿@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  /* Primary color system (exact values requested) */
+  --primary-emerald-1: #00ffae;
+  --primary-cyan-1: #00e5ff;
+  --primary-emerald-2: #10f2c1;
+
+  /* Background layers */
+  --bg-deep-1: #020406;
+  --bg-deep-2: #081018;
+  --bg-glass-layer: rgba(8, 12, 10, 0.72);
+  --bg-glass-strong: rgba(8, 12, 10, 0.9);
+
+  /* Borders / glows */
+  --glass-border: rgba(0, 255, 174, 0.2);
+  --muted-border: rgba(255, 255, 255, 0.08);
+
+  --foreground: #ffffff;
+  --text: #ffffff;
+  --muted: #bcbcbc;
+
+  /* Shadows and glow tokens */
+  --glow-emerald: 0 0 30px rgba(0, 255, 174, 0.12);
+  --glow-emerald-strong: 0 0 60px rgba(0, 255, 174, 0.18);
+  --glow-cyan: 0 0 30px rgba(0, 229, 255, 0.10);
+  --glass-inset: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(0, 255, 174, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.03) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg-deep-1) 0%, var(--bg-deep-2) 100%);
+  color: var(--foreground);
+  overflow-x: hidden;
+  position: relative;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(8, 18, 14, 0.88) 0%, rgba(8, 12, 10, 0.78) 100%);
+  border: 1px solid var(--muted-border);
+  border-radius: 24px;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow:
+    var(--glass-inset),
+    var(--glow-emerald),
+    0 8px 32px rgba(0, 255, 174, 0.04);
+  transition: all 0.28s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 174, 0.25), transparent);
+  pointer-events: none;
+}
+
+/* Reusable design-system classes */
+.glass-card {
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(8,12,10,0.42));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glow-emerald);
+  backdrop-filter: blur(22px);
+}
+
+.neon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary-emerald-1), var(--primary-cyan-1));
+  color: #021214;
+  box-shadow: 0 6px 30px rgba(0,255,174,0.18), 0 2px 8px rgba(0,229,255,0.06);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+.neon-btn:hover { transform: translateY(-4px) scale(1.01); box-shadow: var(--glow-emerald-strong); }
+
+.btn-outline-neon {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--primary-emerald-1);
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+
+}
+
+.input-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid var(--glass-border);
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  color: var(--foreground);
+  backdrop-filter: blur(10px);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+.input-glass:focus { box-shadow: 0 8px 40px rgba(0,255,174,0.12); transform: translateY(-1px); outline: none; }
+
+.table-glass {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, rgba(8,12,10,0.6), rgba(8,12,10,0.44));
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.table-glass thead th { text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.8); }
+.table-glass tbody tr { transition: background 160ms ease, transform 160ms ease; }
+.table-glass tbody tr:hover { background: rgba(0,255,174,0.02); transform: translateY(-2px); }
+
+.sidebar-glass {
+  background: linear-gradient(180deg, rgba(8,12,10,0.7), rgba(8,12,10,0.5));
+  border-right: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+}
+
+.glow-border {
+  box-shadow: 0 0 40px rgba(0,255,174,0.12), 0 6px 24px rgba(0,229,255,0.06);
+  border: 1px solid rgba(0,255,174,0.12);
+}
+
+.neon-text { color: var(--primary-emerald-1); text-shadow: 0 4px 28px rgba(0,255,174,0.12); }
+
+/* Small helpers for consistent spacing & uppercase fintech headings */
+.fin-heading { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.fin-sub { color: rgba(255,255,255,0.82); }
+
+/* Ensure responsive glass sizing doesn't break layout */
+.glass-panel, .glass-card { will-change: transform, box-shadow; }
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Mobile-specific overrides: only apply when viewport <= 768px. Preserve desktop unchanged. */
+@media (max-width: 768px) {
+  body { overflow-x: hidden; }
+
+  /* Reduce global typography on mobile */
+  h1 { font-size: 2.25rem; line-height: 1.02; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.125rem; }
+  p, li, span { font-size: 0.95rem; }
+
+  /* Buttons: smaller on mobile but keep desktop styles intact */
+  .neon-btn, .btn-outline-neon, button, a.h-12, .h-14 {
+    height: 2.4rem !important;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Glass panels/cards: reduce padding and radius for compactness */
+  .glass-panel, .glass-card, .rounded-\[32px\], .rounded-\[30px\], .rounded-\[28px\] {
+    padding: 0.75rem !important;
+    border-radius: 14px !important;
+  }
+
+  /* Force large fixed heights/widths to be flexible on mobile */
+  .h-\[520px\], .h-\[440px\], .h-\[240px\], .h-\[232px\], .h-\[120px\] {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .w-\[380px\], .w-\[280px\], .w-\[232px\] {
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  /* Reduce spacing globally */
+  .px-6 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .px-8 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .py-5 { padding-top: 0.6rem !important; padding-bottom: 0.6rem !important; }
+  .gap-16 { gap: 1rem !important; }
+  .gap-6 { gap: 0.6rem !important; }
+  .p-6 { padding: 0.6rem !important; }
+  .p-8 { padding: 0.6rem !important; }
+
+  /* Cards and grid layouts: make them compact and 100% width */
+  .grid-cols-1, .sm\:grid-cols-2, .lg\:grid-cols-5, .xl\:grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* Prevent text overflow in tight layouts */
+  .truncate, .break-words, p, h1, h2, h3 { overflow-wrap: break-word; word-break: break-word; }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    filter: blur(60px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(80px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.floating {
+  animation: float 8s ease-in-out infinite;
+}
+
+.glow-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(0, 255, 136, 0.25);
+  color: #030303;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Button alignment fixes: ensure button-like elements center their text without changing sizes */
+button,
+input[type="button"],
+input[type="submit"],
+a[class*="rounded-2xl"],
+a[class*="rounded-3xl"],
+.neon-btn,
+.btn-outline-neon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+/* Ensure no transform or vertical shift from child SVGs or icons */
+button > svg,
+a[class*="rounded-2xl"] > svg,
+.neon-btn > svg {
+  vertical-align: middle;
+}
