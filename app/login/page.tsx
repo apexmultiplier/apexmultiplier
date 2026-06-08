@@ -44,7 +44,7 @@ export default function LoginPage() {
       if (error) {
         console.error('Google OAuth Error:', error)
         const msg = (error.message || '').toLowerCase()
-        if (msg.includes('missing oauth secret') || error?.error_code === 'validation_failed') {
+        if (msg.includes('missing oauth secret') || (error as any)?.error_code === 'validation_failed') {
           alert('Google sign-in is not configured for this environment. Please use Email/Password login or contact support.')
         } else {
           alert('Unable to start Google sign-in. Please try again or use Email/Password login.')

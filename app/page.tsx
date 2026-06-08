@@ -411,7 +411,7 @@ function AICalculator() {
           </motion.div>
         </div>,
         // mount at document.body to ensure modal is outside page layout
-        typeof document !== 'undefined' ? document.body : null
+        typeof document !== 'undefined' ? document.body : ({} as DocumentFragment)
       ) : null}
 
     </section>

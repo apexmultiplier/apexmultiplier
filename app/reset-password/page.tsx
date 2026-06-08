@@ -48,9 +48,9 @@ export default function ResetPasswordPage() {
 
       // Attempt to let Supabase extract session from URL for PASSWORD_RECOVERY
       try {
-        // @ts-ignore
-        if (supabase.auth && typeof supabase.auth.getSessionFromUrl === 'function') {
-          await supabase.auth.getSessionFromUrl({ storeSession: true })
+        const authAny = supabase.auth as any
+        if (authAny && typeof authAny.getSessionFromUrl === 'function') {
+          await authAny.getSessionFromUrl({ storeSession: true })
         }
       } catch (e) {
         // ignore

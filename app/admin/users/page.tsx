@@ -10,8 +10,12 @@ interface UserRecord {
   email: string
   full_name?: string
   kyc_status?: string
-  created_at?: string
-  balance?: number
+  created_at?: string | null
+  balance?: number | string | null
+  unique_id?: string | null
+  status?: string | null
+  first_name?: string | null
+  last_name?: string | null
 }
 
 interface UserStats {

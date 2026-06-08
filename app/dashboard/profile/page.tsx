@@ -177,7 +177,8 @@ export default function DashboardProfilePage() {
       }
 
       setEmailVerificationStatus("Pending")
-      if (data && data[0] && data[0].id) setEmailVerificationRequestId(data[0].id)
+      const inserted = data as any[] | null
+      if (inserted && inserted[0] && inserted[0].id) setEmailVerificationRequestId(inserted[0].id)
       alert("Verification request created. Admin will review.")
     } catch (e) {
       console.error(e)

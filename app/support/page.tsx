@@ -44,8 +44,8 @@ export default function SupportPage() {
         const { data: uploadData, error: uploadError } = await supabase.storage.from("support-screenshots").upload(fileName, file)
         console.log("uploadData", uploadData, "uploadError", uploadError)
         if (uploadError) throw uploadError
-        const { publicURL } = supabase.storage.from("support-screenshots").getPublicUrl(fileName)
-        screenshot_url = publicURL
+        const { data: { publicUrl } } = supabase.storage.from("support-screenshots").getPublicUrl(fileName)
+        screenshot_url = publicUrl
       }
 
       const insertPayload = {

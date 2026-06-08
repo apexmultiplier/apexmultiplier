@@ -10,6 +10,8 @@ type Withdrawal = {
   wallet: string
   network: string
   status: string
+  created_at?: string | null
+  admin_note?: string | null
 }
 
 export default function AdminWithdrawalsPage() {
