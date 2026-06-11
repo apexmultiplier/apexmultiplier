@@ -23,6 +23,8 @@ import {
   Wallet,
   Menu,
   X,
+  Target,
+  Award,
 } from "lucide-react"
 import { PlanCard } from "./components/landing/PlanCard"
 import { InfoCard } from "./components/landing/InfoCard"
@@ -72,6 +74,13 @@ const features = [
     title: "24/7 Expert Support",
     description: "White-glove service for every investor.",
   },
+]
+
+const heroStats = [
+  { icon: Users, value: '50K+', label: 'Active Investors' },
+  { icon: Target, value: '96%', label: 'AI Accuracy' },
+  { icon: Award, value: '150+', label: 'Professional Traders Manage Funds' },
+  { icon: ShieldCheck, value: '24/7', label: 'Monitoring' },
 ]
 
 
@@ -701,11 +710,8 @@ export default function Page() {
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-zinc-400 text-sm">AI Trading Console</p>
-                    <h2 className="text-3xl font-black text-white">Cinematic Market View</h2>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#00ffae]/20 bg-[#00ffae]/10 px-4 py-2 text-sm text-[#00ffae] shadow-[0_0_20px_rgba(0,255,174,0.12)]">
-                    <Sparkles className="w-4 h-4" /> Live
+                    <p className="text-zinc-400 text-sm uppercase tracking-[0.35em]">TRUSTED BY INVESTORS WORLDWIDE</p>
+                    <h2 className="text-3xl font-black text-white">TRUSTED BY INVESTORS WORLDWIDE</h2>
                   </div>
                 </div>
 
@@ -714,123 +720,22 @@ export default function Page() {
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(0,229,255,0.08),transparent_40%)]" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_70%)]" />
 
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-                    className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#00e5ff]/10"
-                  />
-                  <motion.div
-                    animate={{ rotate: -250 }}
-                    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-                    className="absolute left-1/2 top-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#00ffae]/20"
-                  />
-
-                  <div className="absolute left-1/2 top-1/2 h-[232px] w-[232px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-[#020406]/95 shadow-[0_0_40px_rgba(0,255,174,0.14)]">
-                    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(0,255,174,0.16),transparent_55%)]" />
-                    <div className="absolute inset-0 rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.12),transparent_70%)]" />
-                    <div className="absolute inset-0 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent_70%)]" />
-                    <div className="absolute inset-0 rounded-full bg-[linear-gradient(135deg,rgba(0,255,174,0.08),transparent_50%)] mix-blend-screen" />
-                    <div className="absolute inset-0 rounded-full border border-white/10" />
-                    <div className="absolute inset-0 grid place-items-center">
-                      <div className="h-[120px] w-[120px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,255,174,0.18),transparent_55%)] border border-[#00ffae]/30 shadow-[0_0_40px_rgba(0,255,174,0.18)]" />
-                    </div>
-                  </div>
-
-                  {globePoints.map((point, index) => (
-                    <motion.div
-                      key={index}
-                      animate={{ scale: [1, 1.4, 1], opacity: [0.55, 1, 0.55] }}
-                      transition={{ duration: 2.4, repeat: Infinity, delay: index * 0.08 }}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#00ffae]/30 bg-[#00ffae]/20"
-                      style={{ width: "12px", height: "12px", top: point.top, left: point.left }}
-                    >
-                      <span className="absolute inset-0 rounded-full animate-ping bg-[#00ffae]/20" />
-                    </motion.div>
-                  ))}
-
-                  <div className="absolute left-6 top-6 grid gap-3">
-                    <motion.div
-                      initial={{ y: 16, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="rounded-3xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-3xl shadow-[0_0_30px_rgba(0,255,174,0.12)]"
-                    >
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-[#00ffae]/70">AI Accuracy</p>
-                      <h4 className="mt-3 text-lg font-black text-white">96.4%</h4>
-                    </motion.div>
-                    <motion.div
-                      initial={{ y: 16, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="rounded-3xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-3xl shadow-[0_0_30px_rgba(0,255,174,0.12)]"
-                    >
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-[#00e5ff]/70">Market Signals</p>
-                      <h4 className="mt-3 text-lg font-black text-white">Live</h4>
-                    </motion.div>
-                  </div>
-
-                  <div className="absolute right-6 top-16 grid gap-3">
-                    <motion.div
-                      initial={{ y: 16, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.25 }}
-                      className="rounded-3xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-3xl shadow-[0_0_30px_rgba(0,229,255,0.12)]"
-                    >
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-[#00e5ff]/70">Live Trading</p>
-                      <h4 className="mt-3 text-lg font-black text-white">24/7</h4>
-                    </motion.div>
-                    <motion.div
-                      initial={{ y: 16, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.35 }}
-                      className="rounded-3xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-3xl shadow-[0_0_30px_rgba(0,255,174,0.12)]"
-                    >
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-[#00ffae]/70">Global Reach</p>
-                      <h4 className="mt-3 text-lg font-black text-white">42+ Countries</h4>
-                    </motion.div>
-                  </div>
-
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <div className="relative h-[120px] overflow-hidden rounded-[28px] border border-white/10 bg-[#03121c]/80 p-4 backdrop-blur-3xl shadow-[0_0_35px_rgba(0,255,174,0.14)]">
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,255,174,0.08),transparent_70%)]" />
-                      <svg viewBox="0 0 420 120" className="absolute inset-0 w-full h-full">
-                        <defs>
-                          <linearGradient id="graphGlow2" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#00ffae" />
-                            <stop offset="100%" stopColor="#00e5ff" />
-                          </linearGradient>
-                        </defs>
-                        <path
-                          d="M16 106 C80 80 142 82 192 60 C238 40 290 54 345 28 C385 10 400 6 404 4"
-                          fill="none"
-                          stroke="url(#graphGlow2)"
-                          strokeWidth="5"
-                          strokeLinecap="round"
-                          className="drop-shadow-[0_0_30px_#00ffae]"
-                        />
-                        <path
-                          d="M16 106 C80 80 142 82 192 60 C238 40 290 54 345 28 C385 10 400 6 404 4 L404 120 L16 120 Z"
-                          fill="url(#graphGlow2)"
-                          opacity="0.12"
-                        />
-                        {[30, 90, 150, 210, 270, 330, 390].map((x) => (
-                          <line key={x} x1={x} y1="16" x2={x} y2="112" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-                        ))}
-                      </svg>
-                      <div className="relative z-10 grid gap-2 sm:grid-cols-3">
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[0.35em] text-[#00ffae]/70">Growth</p>
-                          <p className="mt-2 text-xl font-black text-white">+18.6%</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[0.35em] text-[#00e5ff]/70">Signals</p>
-                          <p className="mt-2 text-xl font-black text-white">241</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[0.35em] text-[#00ffae]/70">Active</p>
-                          <p className="mt-2 text-xl font-black text-white">98%</p>
-                        </div>
-                      </div>
+                  <div className="relative z-10 h-full w-full">
+                    <div className="grid grid-cols-2 gap-4 h-full">
+                      {heroStats.map((s: any, idx: number) => {
+                        const Icon = s.icon
+                        return (
+                          <motion.div key={idx} whileHover={{ y: -6 }} className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-3xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,255,174,0.12)]">
+                            <div className="w-14 h-14 rounded-3xl bg-[#00ffae]/10 border border-[#00ffae]/20 flex items-center justify-center text-[#00ffae] shadow-[0_0_20px_rgba(0,255,174,0.12)]">
+                              <Icon className="w-7 h-7" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm uppercase tracking-[0.28em] text-[#00ffae]/80">{s.label}</p>
+                              <p className="mt-2 text-2xl md:text-3xl font-black text-white">{s.value}</p>
+                            </div>
+                          </motion.div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>

@@ -1,0 +1,11 @@
+[33mdeeadc5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Add Apex robot trading console
+[33me89ae87[m update
+[33mb299c43[m Fix all TypeScript build errors
+[33mc752d0f[m Fix transactions typing
+[33mae8b438[m Complete Deposit type definition
+[33m99bad23[m Fix screenshot href type
+[33m6fd9ddb[m Fix Deposit screenshot fields
+[33m7b69a72[m Fix Deposit payment_method type
+[33me604f5e[m Fix Deposit type network field
+[33m6425147[m Fix bonuses page useEffect cleanup
+[33m0457bb9[m Initial commit
