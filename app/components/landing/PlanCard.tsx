@@ -97,8 +97,8 @@ export function PlanCard({ plan }: PlanCardProps) {
         </div>
       ) : null}
 
-      <div className="relative z-10 flex h-full flex-col gap-6 p-5 md:p-8 min-h-[420px] md:min-h-0">
-        <div className="flex flex-col items-center text-center gap-4">
+      <div className="relative z-10 flex h-full flex-col gap-8 md:gap-6 p-6 md:p-8 min-h-[420px] md:min-h-0">
+        <div className="flex flex-col items-center text-center gap-6 md:gap-4">
             <div className={`relative flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-[20px] md:rounded-[24px] border ${theme.iconBorder} ${theme.iconBg} shadow-[0_0_35px_rgba(255,255,255,0.12)]`}>
               <Icon size={22} className={theme.accent} />
             <span className="absolute inset-0 rounded-[24px] border border-white/5" />
@@ -106,8 +106,8 @@ export function PlanCard({ plan }: PlanCardProps) {
           <p className="text-lg md:text-sm uppercase tracking-[0.32em] text-zinc-300 font-extrabold">{plan.title}</p>
         </div>
 
-        <div className="flex flex-col items-center gap-4 text-center">
-            <p className={`text-4xl md:text-5xl font-black tracking-[-0.03em] ${theme.textAccent}`}>{plan.price}</p>
+        <div className="flex flex-col items-center gap-6 text-center">
+            <p className={`text-7xl md:text-5xl font-black leading-none tracking-tight ${theme.textAccent}`}>{plan.price}</p>
             <p className="max-w-[240px] text-xs md:text-sm uppercase tracking-[0.28em] text-zinc-400 mt-1">{plan.duration} • {plan.roi}</p>
         </div>
 
@@ -122,10 +122,10 @@ export function PlanCard({ plan }: PlanCardProps) {
           </div>
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto w-full">
           <Link
             href={`/signup?plan=${encodeURIComponent(plan.title)}&amount=${plan.amount}`}
-            className={`inline-flex h-10 md:h-[58px] w-[85%] md:w-full mx-auto items-center justify-center gap-3 rounded-full text-sm md:text-sm font-bold uppercase tracking-[0.22em] md:tracking-[0.3em] transition-transform duration-300 ${theme.button} hover:scale-[1.01]`}
+            className={`inline-flex h-14 md:h-[58px] w-full mx-0 items-center justify-center gap-3 rounded-full text-sm md:text-sm font-bold uppercase tracking-[0.22em] md:tracking-[0.3em] transition-transform duration-300 ${theme.button} hover:scale-[1.01]`}
           >
             Invest Now
             <ArrowRight className="h-4 w-4" />

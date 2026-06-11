@@ -719,7 +719,7 @@ export default function Page() {
                 <div className="mt-4 w-full h-auto">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-1">
-                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">XAUUSD</p>
@@ -740,7 +740,7 @@ export default function Page() {
                     </div>
 
                     <div className="col-span-1">
-                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">XAGUSD</p>
@@ -761,7 +761,7 @@ export default function Page() {
                     </div>
 
                     <div className="col-span-1">
-                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">BTCUSD</p>
@@ -782,7 +782,7 @@ export default function Page() {
                     </div>
 
                     <div className="col-span-1">
-                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">EURUSD</p>
@@ -804,7 +804,7 @@ export default function Page() {
 
                     <div className="col-span-2 flex justify-center">
                       <div className="w-full max-w-xs">
-                        <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                        <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">GBPUSD</p>
