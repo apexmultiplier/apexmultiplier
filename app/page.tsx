@@ -703,39 +703,126 @@ export default function Page() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="relative rounded-[32px] border border-[rgba(0,255,174,0.2)] bg-white/5 backdrop-blur-2xl shadow-[0_0_60px_rgba(0,255,174,0.12),inset_0_0_20px_rgba(255,255,255,0.03)] overflow-hidden p-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent pointer-events-none" />
-              <div className="absolute -left-16 top-8 w-28 h-28 rounded-full border border-[#00ffae]/20 blur-2xl" />
-              <div className="absolute -right-12 bottom-12 w-40 h-40 rounded-full bg-[#00e5ff]/10 blur-3xl" />
+            <div
+              className="relative rounded-[32px] border border-[rgba(0,255,174,0.12)] bg-[radial-gradient(circle_at_center,rgba(0,255,170,0.12)_0%,rgba(0,255,170,0.04)_40%,transparent_75%),rgba(16,45,40,0.55)] backdrop-blur-xl overflow-hidden p-6"
+              style={{ boxShadow: "0 0 40px rgba(0,255,170,0.08), 0 0 80px rgba(0,255,170,0.04)" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-cyan-500/3 to-transparent pointer-events-none rounded-[28px]" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/3 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.14),transparent_40%)] opacity-90 blur-3xl pointer-events-none" />
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <p className="text-zinc-400 text-sm uppercase tracking-[0.35em]">TRUSTED BY INVESTORS WORLDWIDE</p>
-                    <h2 className="text-3xl font-black text-white">TRUSTED BY INVESTORS WORLDWIDE</h2>
-                  </div>
+                <div className="mb-4">
+                  <p className="text-sm uppercase tracking-[0.24em] text-emerald-300/90">APEX MARKET PERFORMANCE</p>
+                  <h2 className="mt-1 text-2xl md:text-3xl font-black text-white">PORTFOLIO GROWTH</h2>
+                  <p className="mt-2 text-sm text-zinc-400">Real Performance Across Major Trading Assets</p>
                 </div>
 
-                <div className="relative h-[440px] rounded-[30px] border border-white/10 bg-[#081018]/90 overflow-hidden p-6">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,255,174,0.12),transparent_35%)]" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(0,229,255,0.08),transparent_40%)]" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_70%)]" />
+                <div className="mt-4 w-full h-auto">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-1">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">XAUUSD</p>
+                            <p className="mt-1 text-sm font-medium text-zinc-300">Gold</p>
+                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/10 to-emerald-500/8 border border-cyan-400/20 shadow-[0_8px_30px_rgba(6,182,166,0.08)]">
+                            <TrendingUp className="w-4 h-4 text-cyan-300" />
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <p className="text-2xl font-extrabold text-white">$2.8M+</p>
+                          <div className="flex items-center gap-2 text-sm text-emerald-400">
+                            <ArrowRight className="w-4 h-4" />
+                            <span className="text-emerald-400">+2.4%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="relative z-10 h-full w-full">
-                    <div className="grid grid-cols-2 gap-4 h-full">
-                      {heroStats.map((s: any, idx: number) => {
-                        const Icon = s.icon
-                        return (
-                          <motion.div key={idx} whileHover={{ y: -6 }} className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-3xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,255,174,0.12)]">
-                            <div className="w-14 h-14 rounded-3xl bg-[#00ffae]/10 border border-[#00ffae]/20 flex items-center justify-center text-[#00ffae] shadow-[0_0_20px_rgba(0,255,174,0.12)]">
-                              <Icon className="w-7 h-7" />
+                    <div className="col-span-1">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">XAGUSD</p>
+                            <p className="mt-1 text-sm font-medium text-zinc-300">Silver</p>
+                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/10 to-emerald-500/8 border border-cyan-400/20 shadow-[0_8px_30px_rgba(6,182,166,0.08)]">
+                            <TrendingUp className="w-4 h-4 text-cyan-300" />
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <p className="text-2xl font-extrabold text-white">$0.9M+</p>
+                          <div className="flex items-center gap-2 text-sm text-emerald-400">
+                            <ArrowRight className="w-4 h-4" />
+                            <span className="text-emerald-400">+1.8%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-span-1">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">BTCUSD</p>
+                            <p className="mt-1 text-sm font-medium text-zinc-300">Bitcoin</p>
+                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/10 to-emerald-500/8 border border-cyan-400/20 shadow-[0_8px_30px_rgba(6,182,166,0.08)]">
+                            <TrendingUp className="w-4 h-4 text-cyan-300" />
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <p className="text-2xl font-extrabold text-white">$1.7M+</p>
+                          <div className="flex items-center gap-2 text-sm text-emerald-400">
+                            <ArrowRight className="w-4 h-4" />
+                            <span className="text-emerald-400">+3.1%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-span-1">
+                      <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">EURUSD</p>
+                            <p className="mt-1 text-sm font-medium text-zinc-300">EUR/USD</p>
+                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/10 to-emerald-500/8 border border-cyan-400/20 shadow-[0_8px_30px_rgba(6,182,166,0.08)]">
+                            <TrendingUp className="w-4 h-4 text-cyan-300" />
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <p className="text-2xl font-extrabold text-white">$1.3M+</p>
+                          <div className="flex items-center gap-2 text-sm text-emerald-400">
+                            <ArrowRight className="w-4 h-4" />
+                            <span className="text-emerald-400">+1.9%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-span-2 flex justify-center">
+                      <div className="w-full max-w-xs">
+                        <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[#081018]/60 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">GBPUSD</p>
+                              <p className="mt-1 text-sm font-medium text-zinc-300">GBP/USD</p>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm uppercase tracking-[0.28em] text-[#00ffae]/80">{s.label}</p>
-                              <p className="mt-2 text-2xl md:text-3xl font-black text-white">{s.value}</p>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/10 to-emerald-500/8 border border-cyan-400/20 shadow-[0_8px_30px_rgba(6,182,166,0.08)]">
+                              <TrendingUp className="w-4 h-4 text-cyan-300" />
                             </div>
-                          </motion.div>
-                        )
-                      })}
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <p className="text-2xl font-extrabold text-white">$1.1M+</p>
+                            <div className="flex items-center gap-2 text-sm text-emerald-400">
+                              <ArrowRight className="w-4 h-4" />
+                              <span className="text-emerald-400">+1.6%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
