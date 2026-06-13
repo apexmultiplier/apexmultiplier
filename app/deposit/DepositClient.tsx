@@ -101,7 +101,7 @@ export default function DepositClient() {
         planName = selectedPlanObj?.title || "Custom Plan"
       }
 
-      const { error } = await supabase.from("deposits").insert([
+      const { data: insertedDeposit, error } = await supabase.from("deposits").insert([
         {
           user_id: user.id,
           email: user.email,
@@ -114,7 +114,7 @@ export default function DepositClient() {
           daily_profit: dailyProfit,
           total_profit: totalProfit,
         },
-      ])
+      ]).select().single()
 
       if (error) {
         console.log(error)
@@ -122,22 +122,17 @@ export default function DepositClient() {
         return
       }
 
-      // Create active user plan so dashboard updates immediately
-      const { error: planError } = await supabase.from("user_plans").insert([
-        {
-          user_email: user.email,
-          plan_name: (selectedPlanObj?.title || planName).toUpperCase().includes("ELITE") ? "ELITE" : (selectedPlanObj?.title || planName).toUpperCase().split(" ")[0],
-          amount: depositAmount,
-          roi: roiPercent,
-          duration: duration,
-          daily_profit: dailyProfit,
-          total_profit: totalProfit,
-          status: "active",
-        },
-      ])
-
-      if (planError) {
-        console.log(planError)
+      // Request server to create the active plan using service role (keeps RLS intact)
+      try {
+        if (insertedDeposit?.id) {
+          await fetch('/api/admin/approve-deposit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: insertedDeposit.id, status: 'approved' }),
+          })
+        }
+      } catch (e) {
+        console.warn('Server plan creation failed', e)
       }
 
       alert("Deposit Submitted Successfully")

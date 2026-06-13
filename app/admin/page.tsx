@@ -161,39 +161,23 @@ export default function AdminPage() {
   const updateDepositStatus = async (id: number, status: string) => {
     const deposit = deposits.find((d) => d.id === id)
     if (!deposit) return
-    await supabase.from("deposits").update({ status }).eq("id", id)
 
-    if (status === "approved") {
-      // update user balance and create user_plans
-      const { data: user } = await supabase.from("users").select("*").eq("email", deposit.email).single()
-      const newBalance = (user?.balance || 0) + Number(deposit.amount || 0)
-      await supabase.from("users").update({ balance: newBalance }).eq("email", deposit.email)
-
-      const planMapping: Record<string, { roi: number; duration: number }> = {
-        STARTER: { roi: 8, duration: 30 },
-        SILVER: { roi: 9, duration: 30 },
-        PREMIUM: { roi: 10, duration: 30 },
-        GOLD: { roi: 12, duration: 30 },
-        "ELITE INFINITY": { roi: 14, duration: 30 },
+    // Use server API so inserts run with service role privileges
+    try {
+      const res = await fetch('/api/admin/approve-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        alert(body?.error || 'Failed to update deposit')
       }
-      const planName = deposit.plan_name || "STARTER"
-      const planData = planMapping[planName] || planMapping.STARTER
-      const monthlyProfit = (deposit.amount * planData.roi) / 100
-      const dailyProfit = monthlyProfit / planData.duration
-
-      await supabase.from("user_plans").insert([{
-        user_email: deposit.email,
-        plan_name: planName,
-        amount: deposit.amount,
-        roi: planData.roi,
-        duration: planData.duration,
-        daily_profit: dailyProfit,
-        total_profit: monthlyProfit,
-        status: "active",
-      }])
+    } catch (err: any) {
+      alert(err.message || 'Failed to update deposit')
+    } finally {
+      loadAdminData()
     }
-
-    loadAdminData()
   }
 
   const updateWithdrawalStatus = async (id: number, status: string) => {

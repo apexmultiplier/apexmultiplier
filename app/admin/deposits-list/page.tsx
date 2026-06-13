@@ -54,49 +54,22 @@ export default function DepositsPage() {
     const deposit = deposits.find((d) => d.id === id)
     if (!deposit) return
 
-    const { error } = await supabase
-      .from("deposits")
-      .update({ status })
-      .eq("id", id)
-
-    if (error) {
-      alert(error.message)
-      setUpdatingId(null)
-      return
-    }
-
-    if (status === "approved") {
-      // Create user_plans record (updated plan mapping)
-      const planMapping: Record<string, { roi: number; duration: number }> = {
-        STARTER: { roi: 8, duration: 30 },
-        SILVER: { roi: 9, duration: 30 },
-        PREMIUM: { roi: 10, duration: 30 },
-        GOLD: { roi: 12, duration: 30 },
-        ELITE: { roi: 14, duration: 30 },
-        "ELITE INFINITY": { roi: 14, duration: 30 },
+    try {
+      const res = await fetch('/api/admin/approve-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        alert(body?.error || 'Failed to update deposit')
       }
-
-      const planName = deposit.plan_name || "STARTER"
-      const planData = planMapping[planName] || planMapping.STARTER
-      const monthlyProfit = (deposit.amount * planData.roi) / 100
-      const dailyProfit = monthlyProfit / planData.duration
-
-      await supabase.from("user_plans").insert([
-        {
-          user_email: deposit.email,
-          plan_name: planName,
-          amount: deposit.amount,
-          roi: planData.roi,
-          duration: planData.duration,
-          daily_profit: dailyProfit,
-          total_profit: monthlyProfit,
-          status: "active",
-        },
-      ])
+    } catch (err: any) {
+      alert(err.message || 'Failed to update deposit')
+    } finally {
+      await loadDeposits()
+      setUpdatingId(null)
     }
-
-    loadDeposits()
-    setUpdatingId(null)
   }
 
   const formatDate = (dateString: string) => {

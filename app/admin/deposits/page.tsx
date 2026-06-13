@@ -75,53 +75,16 @@ export default function AdminDepositsPage() {
       const updatePayload: any = { status: statusValue }
       if (adminNotes[id]) updatePayload.admin_note = adminNotes[id]
 
-      const { error: updateErr } = await supabase.from("deposits").update(updatePayload).eq("id", id)
-      if (updateErr) throw updateErr
+      // Call server API to perform approval actions with service role privileges
+      const res = await fetch('/api/admin/approve-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: statusValue, admin_note: adminNotes[id] || null }),
+      })
 
-      if (statusValue === "approved") {
-        // ensure user exists and update balance
-        const { data: existingUser } = await supabase.from("users").select("*").eq("email", deposit.email).single()
-        if (existingUser) {
-          const newBalance = Number(existingUser.balance || 0) + Number(deposit.amount || 0)
-          const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("email", deposit.email)
-          if (balanceError) console.warn("Balance update warning:", balanceError)
-        } else {
-          const { error: createError } = await supabase.from("users").insert([{ email: deposit.email, balance: Number(deposit.amount || 0) }])
-          if (createError) console.warn("User create warning:", createError)
-        }
-
-        // determine plan and roi based on updated plan thresholds
-        const amt = Number(deposit.amount || 0)
-        let roi = 8
-        if (amt >= 10000) roi = 14
-        else if (amt >= 5000) roi = 12
-        else if (amt >= 2500) roi = 10
-        else if (amt >= 1000) roi = 9
-        else roi = 8
-        const monthlyProfit = (amt * roi) / 100
-        const dailyProfit = monthlyProfit / 30
-        let planName = "STARTER"
-        if (amt >= 1000 && amt < 2500) planName = "SILVER"
-        if (amt >= 2500 && amt < 5000) planName = "PREMIUM"
-        if (amt >= 5000 && amt < 10000) planName = "GOLD"
-        if (amt >= 10000) planName = "ELITE INFINITY"
-
-        const { error: planError } = await supabase.from("user_plans").insert([{ user_email: deposit.email, plan_name: planName, amount: amt, roi, daily_profit: dailyProfit, total_profit: monthlyProfit, status: "active" }])
-        if (planError) console.warn("Plan insert warning:", planError)
-
-        // insert transaction record
-        const { error: txErr } = await supabase.from("transactions").insert([{ user_id: usersMap[deposit.email]?.id || null, amount: amt, type: "Deposit", status: "Completed", network: deposit.network || null }])
-        if (txErr) console.warn("Transaction insert warning:", txErr)
-
-        // create notification (best-effort)
-        const notifyPayload = {
-          user_id: usersMap[deposit.email]?.id || null,
-          title: "Deposit Approved",
-          message: `Your deposit of $${amt.toFixed(2)} has been approved.`,
-          read: false,
-        }
-        const { error: notifyErr } = await supabase.from("notifications").insert([notifyPayload])
-        if (notifyErr) console.warn("Notification insert warning:", notifyErr)
+      const body = await res.json()
+      if (!res.ok) {
+        throw new Error(body?.error || 'Failed to approve deposit via server')
       }
 
       // refresh

@@ -146,6 +146,27 @@ export default function DashboardPage() {
     return () => clearInterval(clock)
   }, [])
 
+  // subscribe to deposit changes so dashboard updates instantly after admin actions
+  useEffect(() => {
+    let channel: any = null
+    async function setup() {
+      try {
+        channel = supabase
+          .channel('public:deposits')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, () => {
+            loadDashboard()
+          })
+          .subscribe()
+      } catch (e) {
+        console.warn('Failed to subscribe to deposits changes', e)
+      }
+    }
+    setup()
+    return () => {
+      if (channel && typeof channel.unsubscribe === 'function') channel.unsubscribe()
+    }
+  }, [])
+
   useEffect(() => {
     if (!unlockDate) {
       return
@@ -230,8 +251,60 @@ export default function DashboardPage() {
           .order("id", { ascending: false }),
       ])
 
+      let plansData: any[] = plans || []
+
       const latestDeposit = deposits?.[0] || null
-      const activePlans = plans?.filter((item) => item.status === "active") || []
+      let activePlans = plansData?.filter((item) => item.status === "active") || []
+
+      // If there's an approved deposit but no active plan, create one automatically.
+      if (latestDeposit && (latestDeposit.status || '').toLowerCase() === 'approved' && (activePlans.length === 0)) {
+        try {
+          const amt = Number(latestDeposit.amount || 0)
+          // derive plan name from deposit.plan_name or amount
+          let planName = (latestDeposit.plan_name || '').toString() || ''
+          if (!planName) {
+            if (amt >= 10000) planName = 'ELITE INFINITY'
+            else if (amt >= 5000) planName = 'GOLD'
+            else if (amt >= 2500) planName = 'PREMIUM'
+            else if (amt >= 1000) planName = 'SILVER'
+            else planName = 'STARTER'
+          }
+
+          // roi mapping
+          let roi = 8
+          if (amt >= 10000) roi = 14
+          else if (amt >= 5000) roi = 12
+          else if (amt >= 2500) roi = 10
+          else if (amt >= 1000) roi = 9
+          else roi = 8
+
+          const monthlyProfit = (amt * roi) / 100
+          const dailyProfit = monthlyProfit / 30
+
+          // create plan server-side via admin endpoint to respect RLS
+          try {
+            if (latestDeposit?.id) {
+              await fetch('/api/admin/approve-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: latestDeposit.id, status: 'approved' }),
+              })
+
+              // refresh plans variable
+              const { data: refreshedPlans } = await supabase.from('user_plans').select('*').eq('user_email', user.email).order('id', { ascending: false })
+              if (refreshedPlans) {
+                plansData = refreshedPlans || []
+                // recompute activePlans after refresh
+                activePlans = plansData?.filter((item: any) => item.status === 'active') || []
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to request server plan creation', e)
+          }
+        } catch (e) {
+          console.error('Failed to auto-create user plan for approved deposit', e)
+        }
+      }
 
       const planDetails = activePlans.map((item) => {
         const amountValue = Number(item.amount || 0)
