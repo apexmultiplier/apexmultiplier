@@ -107,7 +107,7 @@ export function PlanCard({ plan }: PlanCardProps) {
         </div>
 
         <div className="flex flex-col items-center gap-6 text-center">
-            <p className={`text-7xl md:text-5xl font-black leading-none tracking-tight ${theme.textAccent}`}>{plan.price}</p>
+            <p className={`text-[96px] sm:text-[72px] md:text-5xl lg:text-6xl font-black leading-none whitespace-nowrap tracking-tight drop-shadow-[0_0_30px_rgba(255,215,0,0.55)] ${theme.textAccent}`}>{plan.price}</p>
             <p className="max-w-[240px] text-xs md:text-sm uppercase tracking-[0.28em] text-zinc-400 mt-1">{plan.duration} • {plan.roi}</p>
         </div>
 

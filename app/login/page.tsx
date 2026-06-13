@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 export default function LoginPage() {
@@ -58,6 +60,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen text-white flex items-center justify-center p-6" style={{background: 'linear-gradient(180deg, #050816 0%, #07111D 30%, #06171B 60%, #050816 100%)'}}>
+
+      <Link
+        href="/"
+        aria-label="Home"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#00F5B0] hover:bg-white/8 transition-shadow backdrop-blur-md shadow-sm"
+      >
+        <ArrowLeft size={16} />
+        <span className="text-sm font-medium">Home</span>
+      </Link>
 
       <div className="glow-orb" style={{width: 300, height: 300, background: 'radial-gradient(circle,#00F5B0 0%, transparent 40%)', top: '6%', left: '6%'}} />
 
