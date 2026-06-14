@@ -26,7 +26,21 @@ const PlansContext = createContext<PlansContextType>({ plans: [], loading: true,
 
 function mapRowToPlan(p: any): Plan {
   const title = p.plan_name || p.name || p.title || 'Unnamed Plan'
-  const amountVal = p.amount ?? p.price ?? p.cost ?? 0
+  // Determine canonical amount to display: prefer min_amount, then max_amount, then fallbacks.
+  let amountVal: number | string = 0
+  if (typeof p.min_amount !== 'undefined' && p.min_amount !== null) {
+    // If min and max are equal, show that amount; otherwise show min_amount as representative
+    if (typeof p.max_amount !== 'undefined' && p.max_amount !== null && Number(p.min_amount) === Number(p.max_amount)) {
+      amountVal = Number(p.min_amount)
+    } else {
+      amountVal = Number(p.min_amount)
+    }
+  } else if (typeof p.max_amount !== 'undefined' && p.max_amount !== null) {
+    amountVal = Number(p.max_amount)
+  } else {
+    amountVal = p.amount ?? p.price ?? p.cost ?? 0
+  }
+
   const price = typeof amountVal === 'number' ? `$${Number(amountVal).toLocaleString()}` : String(amountVal)
   const roiVal = p.roi_percentage ?? p.roi_percent ?? p.roi ?? p.monthly_profit ?? null
   const durationVal = p.duration_days ?? p.duration ?? null

@@ -253,8 +253,35 @@ export default function DashboardPage() {
 
       let plansData: any[] = plans || []
 
+      // Find latest active plan explicitly by user_email (most recent)
+      console.log('Dashboard current user email', user.email)
+      let activePlans: any[] = []
+      try {
+        const { data: activeRows, error: activeErr } = await supabase
+          .from('user_plans')
+          .select('*')
+          .eq('user_email', user.email)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (activeErr) {
+          console.warn('Failed to fetch active user_plans', activeErr)
+          activePlans = plansData?.filter((item) => item.status === 'active') || []
+        } else if (activeRows && activeRows.length > 0) {
+          activePlans = activeRows || []
+          console.log('Active plan found', activeRows[0])
+          console.log('Plan name', activeRows[0].plan_name)
+          console.log('Investment amount', activeRows[0].amount)
+        } else {
+          activePlans = plansData?.filter((item) => item.status === 'active') || []
+        }
+      } catch (e) {
+        console.warn('Error fetching active plan by email', e)
+        activePlans = plansData?.filter((item) => item.status === 'active') || []
+      }
+
       const latestDeposit = deposits?.[0] || null
-      let activePlans = plansData?.filter((item) => item.status === "active") || []
 
       // If there's an approved deposit but no active plan, create one automatically.
       if (latestDeposit && (latestDeposit.status || '').toLowerCase() === 'approved' && (activePlans.length === 0)) {

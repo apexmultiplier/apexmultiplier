@@ -33,53 +33,155 @@ export async function POST(req: Request) {
       if (depErr) return NextResponse.json({ error: depErr.message }, { status: 500 })
 
       const deposit = depData as any
+      console.log('Approved deposit')
+      console.log('Deposit user_id', deposit.user_id)
+      console.log('Deposit Amount', deposit.amount)
 
-      // ensure user exists and update balance
-      const { data: existingUser } = await adminSupabase.from('users').select('*').eq('email', deposit.email).single()
+      // ensure user exists by user_id and update balance
+      const userId = deposit.user_id || null
+      let existingUser: any = null
+      if (userId) {
+        const { data } = await adminSupabase.from('users').select('*').eq('id', userId).single()
+        existingUser = data
+      }
+
       if (existingUser) {
         const newBalance = Number(existingUser.balance || 0) + Number(deposit.amount || 0)
-        await adminSupabase.from('users').update({ balance: newBalance }).eq('email', deposit.email)
+        await adminSupabase.from('users').update({ balance: newBalance }).eq('id', userId)
       } else {
-        await adminSupabase.from('users').insert([{ email: deposit.email, balance: Number(deposit.amount || 0) }])
+        console.warn('User not found for deposit.user_id', userId)
       }
 
-      // determine plan and roi based on amount or deposit.plan_name
+      // determine plan by matching investment_plans table using deposit.amount within min/max range
       const amt = Number(deposit.amount || 0)
-      let roi = 8
-      if (amt >= 10000) roi = 14
-      else if (amt >= 5000) roi = 12
-      else if (amt >= 2500) roi = 10
-      else if (amt >= 1000) roi = 9
-      else roi = 8
-      const monthlyProfit = (amt * roi) / 100
-      const dailyProfit = monthlyProfit / 30
-      let planName = deposit.plan_name || 'STARTER'
-      if (!planName) {
-        if (amt >= 10000) planName = 'ELITE INFINITY'
-        else if (amt >= 5000) planName = 'GOLD'
-        else if (amt >= 2500) planName = 'PREMIUM'
-        else if (amt >= 1000) planName = 'SILVER'
+      let matchedPlan: any = null
+      try {
+        const { data: byRange } = await adminSupabase
+          .from('investment_plans')
+          .select('*')
+          .lte('min_amount', amt) // min_amount <= amt
+          .gte('max_amount', amt) // max_amount >= amt
+          .eq('is_active', true)
+          .limit(1)
+
+        if (byRange && byRange.length > 0) matchedPlan = byRange[0]
+      } catch (e) {
+        console.warn('Failed to query investment_plans by range', e)
       }
 
-      // create user plan (active) with full fields
+      // fallback: try simple mapped names if no exact range match
+      if (!matchedPlan) {
+        let mappedName = ''
+        if (amt === 500) mappedName = 'Starter'
+        else if (amt === 1000) mappedName = 'Silver'
+        else if (amt === 2500) mappedName = 'Premium'
+        else if (amt === 5000) mappedName = 'Gold'
+        else if (amt === 10000) mappedName = 'Elite Infinity'
+
+        if (mappedName) {
+          try {
+            const { data: byName } = await adminSupabase.from('investment_plans').select('*').ilike('name', `%${mappedName}%`).eq('is_active', true).limit(1)
+            if (byName && byName.length > 0) matchedPlan = byName[0]
+          } catch (e) {
+            console.warn('Failed to query investment_plans by name', e)
+          }
+        }
+      }
+
+      if (!matchedPlan) {
+        console.warn('No matching investment_plan found for amount', amt)
+        return NextResponse.json({ error: 'No matching investment_plan found for amount' }, { status: 500 })
+      }
+
+      const planId = matchedPlan.id
+      const roiPercent = Number(matchedPlan.roi_percent ?? 0)
+      const planDuration = Number(matchedPlan.duration_days ?? 30)
+      const totalProfit = (amt * roiPercent) / 100
+      const dailyProfit = totalProfit / 30
+      console.log('Matched Plan', matchedPlan.name || matchedPlan.title || planId)
+      console.log('ROI', roiPercent)
+      console.log('Daily Profit', dailyProfit)
+
+      // create or update user plan (active) with required fields
       const now = new Date()
       const duration = deposit.duration || 30
       const startDate = now.toISOString()
       const endDate = new Date(now.getTime() + (duration || 30) * 24 * 60 * 60 * 1000).toISOString()
-      const { error: planError } = await adminSupabase.from('user_plans').insert([{
-        user_id: existingUser?.id || deposit.user_id || null,
-        user_email: deposit.email,
-        plan_name: planName,
-        amount: amt,
-        roi,
-        duration: duration,
-        daily_profit: dailyProfit,
-        total_profit: monthlyProfit,
-        start_date: startDate,
-        end_date: endDate,
-        status: 'active',
-      }])
-      if (planError) console.warn('Server plan insert warning:', planError)
+
+      // Deactivate any existing active plans for this user (only one active plan allowed)
+      try {
+        const userEmail = deposit.email || existingUser?.email || null
+        await adminSupabase.from('user_plans').update({ status: 'inactive' }).eq('user_email', userEmail).eq('status', 'active')
+      } catch (e) {
+        console.warn('Failed to deactivate existing user_plans', e)
+      }
+
+      // Insert or update user_plans with required fields
+      try {
+        const userEmail = deposit.email || existingUser?.email || null
+        const { data: existingPlanRows } = await adminSupabase.from('user_plans').select('*').eq('user_email', userEmail).limit(1)
+        const planPayload = {
+          user_email: userEmail,
+          plan_name: matchedPlan.name || matchedPlan.title || null,
+          investment: amt,
+          amount: amt,
+          roi_percent: roiPercent,
+          duration: planDuration,
+          daily_profit: dailyProfit,
+          total_profit: totalProfit,
+          start_date: startDate,
+          end_date: endDate,
+          status: 'active'
+        }
+
+        console.log('user_plans payload', planPayload)
+
+        if (existingPlanRows && existingPlanRows.length > 0) {
+          const existing = existingPlanRows[0]
+          const { error: updErr2 } = await adminSupabase.from('user_plans').update(planPayload).eq('id', existing.id)
+          if (updErr2) console.warn('Failed to update user_plans', updErr2)
+          else console.log('Updated user_plans record')
+        } else {
+          const { data: inserted, error: insertErr } = await adminSupabase.from('user_plans').insert([planPayload])
+          if (insertErr) console.warn('Failed to insert user_plans', insertErr)
+          else console.log('Inserted user_plans record', inserted)
+        }
+      } catch (e) {
+        console.warn('Error handling user_plans insert/update', e)
+      }
+
+      // Create or update user_investments record (use foreign keys)
+      try {
+        const invPayload: any = {
+          user_email: deposit.email || existingUser?.email || null,
+          plan_name: matchedPlan.name || matchedPlan.title || null,
+          investment: amt,
+          amount: amt,
+          roi_percent: roiPercent,
+          monthly_roi: roiPercent,
+          total_profit: totalProfit,
+          start_date: startDate,
+          end_date: endDate,
+          status: 'active',
+          duration: planDuration,
+        }
+
+        console.log('user_investments payload', invPayload)
+
+        // try to update an existing investment for this user & plan using email+plan_name
+        const { data: existingInv } = await adminSupabase.from('user_investments').select('*').eq('user_email', invPayload.user_email).eq('plan_name', invPayload.plan_name).limit(1)
+        if (existingInv && existingInv.length > 0) {
+          const { error: updInvErr } = await adminSupabase.from('user_investments').update(invPayload).eq('id', existingInv[0].id)
+          if (updInvErr) console.warn('Failed to update user_investments', updInvErr)
+          else console.log('Updated Investment')
+        } else {
+          const { data: insInv, error: invErr } = await adminSupabase.from('user_investments').insert([invPayload])
+          if (invErr) console.warn('user_investments insert warning:', invErr)
+          else console.log('Inserted Investment', insInv)
+        }
+      } catch (e) {
+        console.warn('Failed to create/update user_investments', e)
+      }
 
       // create transaction
       await adminSupabase.from('transactions').insert([{
