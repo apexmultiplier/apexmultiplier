@@ -90,7 +90,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-[#020406] text-white">
       <div className="flex">
-        <aside className={`fixed inset-y-0 left-0 z-40 w-72 transform bg-white/5 border-r border-white/6 backdrop-blur-3xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-0 sm:translate-x-0'}`}>
+        {/* Backdrop for mobile/tablet when sidebar is open */}
+        <div onClick={() => setOpen(false)} className={`fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden ${open ? 'block' : 'hidden'}`} />
+
+        <aside className={`fixed inset-y-0 left-0 z-40 w-72 transform bg-white/5 border-r border-white/6 backdrop-blur-3xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full' } overflow-y-auto`}>
           <div className="h-full flex flex-col p-6 gap-6">
             <div className="flex items-center gap-3">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-[#0a0f1c]/80 border border-[#00ffae]/20 shadow-[0_0_18px_rgba(0,255,174,0.18)]">
@@ -119,7 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        <div className="flex-1 min-h-screen ml-72">
+        <div className={`flex-1 min-h-screen transition-all duration-300 ${open ? 'lg:ml-72' : ''}`}>
           <header className="sticky top-4 z-30 px-6">
             <div className="max-w-7xl mx-auto">
               <div className="relative overflow-hidden rounded-[20px] border border-[rgba(0,255,174,0.08)] bg-white/5 px-6 py-3 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,255,174,0.06)] flex items-center justify-between">
