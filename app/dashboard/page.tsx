@@ -31,6 +31,61 @@ import {
   User,
 } from "lucide-react"
 
+import { Award, Sparkles, Star } from "lucide-react"
+
+const planThemes: any = {
+  Starter: {
+    icon: Award,
+    accent: "text-amber-300",
+    cardGlow: "shadow-[0_35px_110px_rgba(220,146,64,0.18)]",
+    border: "border-amber-300/20",
+    iconBg: "bg-amber-300/12",
+    iconBorder: "border-amber-300/20",
+    textAccent: "text-amber-200",
+  },
+  Silver: {
+    icon: ShieldCheck,
+    accent: "text-slate-200",
+    cardGlow: "shadow-[0_35px_90px_rgba(226,232,240,0.12)]",
+    border: "border-slate-300/20",
+    iconBg: "bg-slate-100/12",
+    iconBorder: "border-slate-300/20",
+    textAccent: "text-slate-200",
+  },
+  Premium: {
+    icon: Sparkles,
+    accent: "text-violet-300",
+    cardGlow: "shadow-[0_35px_110px_rgba(139,92,246,0.22)]",
+    border: "border-violet-400/25",
+    iconBg: "bg-violet-500/15",
+    iconBorder: "border-violet-400/20",
+    textAccent: "text-violet-200",
+  },
+  Gold: {
+    icon: Star,
+    accent: "text-amber-300",
+    cardGlow: "shadow-[0_35px_110px_rgba(245,158,11,0.20)]",
+    border: "border-amber-300/20",
+    iconBg: "bg-amber-300/15",
+    iconBorder: "border-amber-300/20",
+    textAccent: "text-amber-200",
+  },
+  "Elite Infinity": {
+    icon: Crown,
+    accent: "text-sky-300",
+    cardGlow: "shadow-[0_35px_110px_rgba(56,189,248,0.20)]",
+    border: "border-sky-400/25",
+    iconBg: "bg-sky-500/15",
+    iconBorder: "border-sky-400/20",
+    textAccent: "text-sky-200",
+  },
+}
+
+function getPlanTheme(planName: string) {
+  if (!planName) return planThemes.Premium
+  const key = Object.keys(planThemes).find((k) => planName.toLowerCase().includes(k.toLowerCase()))
+  return (key && planThemes[key]) || planThemes.Premium
+}
 function GlassCard({
   children,
   className = "",
@@ -769,18 +824,28 @@ export default function DashboardPage() {
 
         {/* ACTIVE PLAN */}
 
-        <GlassCard className="p-4 sm:p-6 border border-yellow-400/20 bg-yellow-400/10 mb-6">
+        {/* Dynamic themed active plan card */}
+        <GlassCard className={`p-4 sm:p-6 ${getPlanTheme(activePlan).border} bg-white/10 mb-6 ${getPlanTheme(activePlan).cardGlow}`}>
 
           <div className="flex flex-col xl:flex-row justify-between gap-4 sm:gap-6">
 
             <div className="flex-1">
 
               <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
-                <Crown className={planColorClass(activePlan)} size={28} />
-
-                <h2 className={`text-2xl sm:text-3xl font-black ${planColorClass(activePlan)} break-words fin-heading neon-text`}>
-                  {activePlan}
-                </h2>
+                {(() => {
+                  const theme = getPlanTheme(activePlan)
+                  const Icon = theme.icon
+                  return (
+                    <>
+                      <div className={`rounded-2xl ${theme.iconBg} ${theme.iconBorder} flex items-center justify-center flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11`}>
+                        <Icon className={theme.accent} size={20} />
+                      </div>
+                      <h2 className={`text-2xl sm:text-3xl font-black ${theme.accent} break-words fin-heading neon-text`}>
+                        {activePlan}
+                      </h2>
+                    </>
+                  )
+                })()}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-5">
@@ -825,15 +890,7 @@ export default function DashboardPage() {
                   </h3>
                 </div>
 
-                <div className="hidden md:block">
-                  <p className="text-zinc-400 text-xs sm:text-sm">
-                    Verification
-                  </p>
-
-                  <h3 className={`text-xl sm:text-2xl font-bold mt-2 ${verificationStatus === "Verified" ? "text-emerald-400" : verificationStatus === "Pending" ? "text-amber-300" : "text-zinc-300"}`}>
-                    {verificationStatus}
-                  </h3>
-                </div>
+                {/* Verification block removed per design request */}
 
               </div>
 
