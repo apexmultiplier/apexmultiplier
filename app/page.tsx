@@ -25,6 +25,7 @@ import {
   X,
   Target,
   Award,
+  Briefcase,
 } from "lucide-react"
 import { PlanCard } from "./components/landing/PlanCard"
 import { InfoCard } from "./components/landing/InfoCard"
@@ -60,9 +61,9 @@ const features = [
     description: "Automated insights with high-frequency execution.",
   },
   {
-    icon: BarChart3,
-    title: "Premium Dashboard",
-    description: "Cinematic analytics with immersive glass UI.",
+    icon: Briefcase,
+    title: "Professional Fund Management",
+    description: "Professional traders actively manage capital using advanced market analysis, disciplined risk management, and institutional-grade execution strategies designed for consistent long-term growth.",
   },
   {
     icon: Wallet,
@@ -853,36 +854,7 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="relative z-10 px-6 pb-28">
-        <div className="max-w-7xl mx-auto mb-12 text-center">
-          <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Features</p>
-          <h2 className="mt-4 text-4xl md:text-5xl font-black text-white tracking-normal leading-tight">
-            Advanced Fintech Features Built for Elite Global Investors
-          </h2>
-        </div>
-
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ y: -8 }}
-              className="relative rounded-[30px] border border-[rgba(0,255,174,0.2)] bg-white/5 backdrop-blur-2xl p-8 overflow-hidden shadow-[0_0_25px_rgba(0,255,174,0.15),inset_0_0_20px_rgba(255,255,255,0.03)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent" />
-              <div className="relative z-10 flex h-full flex-col gap-6">
-                <div className="w-16 h-16 rounded-3xl bg-[#00ffae]/10 border border-[#00ffae]/20 flex items-center justify-center text-[#00ffae] shadow-[0_0_20px_rgba(0,255,174,0.12)]">
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white">{feature.title}</h3>
-                  <p className="mt-4 text-zinc-400 leading-7">{feature.description}</p>
-                </div>
-                <div className="mt-auto text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Live</div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      {/* Features section moved to bottom of page per request */}
 
       <section className="relative z-10 px-6 pb-28" id="pricing">
         <div className="max-w-7xl mx-auto text-center mb-12">
@@ -1071,6 +1043,40 @@ export default function Page() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Features section relocated here */}
+      <section className="relative z-10 px-6 pb-28" id="features">
+        <div className="max-w-7xl mx-auto mb-12 text-center">
+          <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Features</p>
+          <h2 className="mt-4 text-4xl md:text-5xl font-black text-white tracking-normal leading-tight">
+            Advanced Fintech Features Built for Elite Global Investors
+          </h2>
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ y: -8 }}
+              className="relative rounded-[30px] border border-[rgba(0,255,174,0.2)] bg-white/5 backdrop-blur-2xl p-8 overflow-hidden shadow-[0_0_25px_rgba(0,255,174,0.15),inset_0_0_20px_rgba(255,255,255,0.03)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent" />
+              <div className="relative z-10 flex h-full flex-col gap-6">
+                <div className="w-16 h-16 rounded-3xl bg-[#00ffae]/10 border border-[#00ffae]/20 flex items-center justify-center text-[#00ffae] shadow-[0_0_20px_rgba(0,255,174,0.12)]">
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">{feature.title}</h3>
+                  <p className="mt-4 text-zinc-400 leading-7">{feature.description}</p>
+                </div>
+                {feature.title !== "Professional Fund Management" ? (
+                  <div className="mt-auto text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Live</div>
+                ) : null}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
