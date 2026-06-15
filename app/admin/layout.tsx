@@ -1,15 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { Menu, Users, DollarSign, FileText, ClipboardList, Bell, LifeBuoy, MailCheck, BarChart3, Settings as SettingsIcon, LogOut } from "lucide-react"
 import { supabase } from "../../lib/supabase"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
-
   const router = useRouter()
+  const pathname = usePathname()
+  const [checking, setChecking] = useState(true)
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [toastMessage, setToastMessage] = useState("")
   const [logoutLoading, setLogoutLoading] = useState(false)
 
@@ -25,6 +27,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: "Email Verification", href: "/admin/email-verifications", icon: MailCheck },
     { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
   ]
+
+  useEffect(() => {
+    // Do not enforce auth checks on login or create-admin pages
+    if (pathname === '/admin/login' || pathname === '/admin/create-admin') {
+      setAuthorized(true)
+      setChecking(false)
+      return
+    }
+
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          console.log('AdminLayout - no session, redirecting to /admin/login')
+          setAuthorized(false)
+          router.push('/admin/login')
+          return
+        }
+
+        const email = session.user?.email || ''
+        console.log('AdminLayout - Current path:', pathname)
+        console.log('AdminLayout - Current user:', email)
+        const { data, error } = await supabase.from('users').select('role').eq('email', email).single()
+        console.log('AdminLayout - role query result:', { data, error: error?.message })
+        if (error || !data || data.role !== 'admin') {
+          console.log('AdminLayout - not admin, redirecting to /admin/login')
+          setAuthorized(false)
+          router.push('/admin/login')
+          return
+        }
+
+        // authorized
+        setAuthorized(true)
+      } catch (e) {
+        console.warn('Admin auth check failed', e)
+        router.push('/admin/login')
+        return
+      } finally {
+        if (mounted) setChecking(false)
+      }
+    })()
+
+    return () => { mounted = false }
+  }, [pathname])
+
+  if (checking || authorized === null) {
+    return <div className="min-h-screen flex items-center justify-center">Checking credentials...</div>
+  }
+
+  if (authorized === false) {
+    // We're redirecting to login; show placeholder until navigation completes
+    return <div className="min-h-screen flex items-center justify-center">Redirecting to admin login…</div>
+  }
+
+  // If we're on the login or create-admin pages, render the page without admin chrome
+  if (pathname === '/admin/login' || pathname === '/admin/create-admin') {
+    return <>{children}</>
+  }
 
   return (
     <div className="min-h-screen bg-[#020406] text-white">

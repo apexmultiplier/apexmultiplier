@@ -78,28 +78,115 @@ export default function AdminPage() {
   }, [sessionActive])
 
   const checkAdminSession = async () => {
+    console.log('AdminPage - checkAdminSession - Current path:', window?.location?.pathname)
     const { data } = await supabase.auth.getSession()
+    console.log('AdminPage - Auth getSession result:', data)
     const active = !!data.session
     setSessionActive(active)
     setAuthLoading(false)
 
-    if (active) loadAdminData()
+    if (active) {
+      // log user and role
+      const user = data.session?.user
+      console.log('AdminPage - session user:', user)
+      try {
+        const email = user?.email
+        if (email) {
+          const { data: roleData, error: roleErr } = await supabase.from('users').select('role').eq('email', email).single()
+          console.log('AdminPage - role query result:', { roleData, roleErr: roleErr?.message })
+        }
+      } catch (e) {
+        console.error('AdminPage - role lookup failed', e)
+      }
+      loadAdminData()
+    }
   }
 
   const handleAdminLogin = async () => {
+    console.log('Login Started')
+    console.log('Login email:', adminEmail)
     setAuthLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: adminEmail,
-      password: adminPassword,
-    })
-    if (error) {
-      alert(error.message)
+    try {
+      const authResult = await supabase.auth.signInWithPassword({ email: adminEmail, password: adminPassword })
+      console.log('Auth Result:', authResult)
+
+      const sess = await supabase.auth.getSession()
+      console.log('Session:', sess)
+
+      const user = authResult?.data?.user || sess?.data?.session?.user || null
+      console.log('User:', user)
+
+      let role = null
+      try {
+        const email = user?.email || adminEmail
+        if (email) {
+          const { data: roleData, error: roleErr } = await supabase.from('users').select('role').eq('email', email).single()
+          console.log('Role query result:', { roleData, roleErr: roleErr?.message })
+          role = roleData?.role
+        }
+      } catch (e) {
+        console.error('Role lookup failed', e)
+      }
+
+      const redirectTarget = '/admin'
+      console.log('Redirect Target:', redirectTarget)
+
+      if (authResult.error) {
+        alert(authResult.error.message)
+        setAuthLoading(false)
+        return
+      }
+
+      // Ensure session exists
+      const { data: sessionData } = await supabase.auth.getSession()
+      console.log('Session Exists:', !!sessionData?.session)
+      if (!sessionData?.session) {
+        alert('Login failed: session not established.')
+        setAuthLoading(false)
+        return
+      }
+
+      // Verify role
+      const email = user?.email || adminEmail
+      console.log('Logged in email:', email)
+      let roleVal = null
+      if (email) {
+        const { data: roleData, error: roleErr } = await supabase.from('users').select('role').eq('email', email).single()
+        console.log('User table record:', roleData)
+        if (roleErr) console.log('Role lookup error:', roleErr.message)
+        roleVal = roleData?.role
+        console.log('Detected role:', roleVal)
+        if (!roleData) {
+          alert('Admin user record not found.')
+          await supabase.auth.signOut()
+          setAuthLoading(false)
+          return
+        }
+      } else {
+        console.log('No email available to lookup role')
+        alert('Admin user record not found.')
+        await supabase.auth.signOut()
+        setAuthLoading(false)
+        return
+      }
+
+      if (roleVal !== 'admin') {
+        alert('Access denied. Admin account required.')
+        await supabase.auth.signOut()
+        setAuthLoading(false)
+        return
+      }
+
+      setSessionActive(true)
       setAuthLoading(false)
-      return
+      loadAdminData()
+      console.log('Redirecting to:', redirectTarget)
+      router.push(redirectTarget)
+    } catch (e) {
+      console.error('Login error', e)
+      alert('Login failed')
+      setAuthLoading(false)
     }
-    setSessionActive(true)
-    setAuthLoading(false)
-    loadAdminData()
   }
 
   const handleLogout = async () => {
@@ -218,8 +305,8 @@ export default function AdminPage() {
           </div>
         </div>
       ) : !sessionActive ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="rounded-3xl border border-white/10 bg-black/40 p-8 max-w-md w-full mx-6">
+        <div className="min-h-screen flex items-center justify-center px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/40 p-8">
             <h1 className="text-4xl font-black text-center">Admin Login</h1>
             <p className="text-zinc-400 text-center mt-2">Sign in to access the admin dashboard.</p>
             <div className="mt-8 space-y-5">
