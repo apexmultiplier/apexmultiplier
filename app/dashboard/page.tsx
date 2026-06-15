@@ -433,7 +433,7 @@ export default function DashboardPage() {
       // Derive email verification status from the email_verification_requests table
       try {
         const { data: evData } = await supabase
-          .from("email_verification_requests")
+          .from("verification_requests")
           .select("*")
           .eq("email", user.email)
           .order("id", { ascending: false })
@@ -719,7 +719,15 @@ export default function DashboardPage() {
                 </div>
 
                 <Link href="/dashboard/profile" className="group min-w-0">
-                  <div className="flex items-center gap-2 sm:gap-3 rounded-2xl px-2 sm:px-3 py-1.5 sm:py-2 bg-white/5 border border-white/10 backdrop-blur-2xl shadow-[0_0_20px_rgba(0,255,174,0.06)]">
+                  <div
+                    onClick={() => {
+                      try {
+                        console.log('Current profile route:', window.location.pathname)
+                        console.log('Target profile route:', '/dashboard/profile')
+                      } catch (e) {}
+                    }}
+                    className="flex items-center gap-2 sm:gap-3 rounded-2xl px-2 sm:px-3 py-1.5 sm:py-2 bg-white/5 border border-white/10 backdrop-blur-2xl shadow-[0_0_20px_rgba(0,255,174,0.06)]"
+                  >
                     <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
                       <User className="text-emerald-400 scale-90 sm:scale-100" size={16} />
                     </div>

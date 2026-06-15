@@ -33,6 +33,8 @@ export default function AdminEmailVerificationsPage() {
         .select("*")
         .order("created_at", { ascending: false })
 
+      console.log("Loaded verification requests:", data)
+
       setRequests(data || [])
     } catch (e) {
       console.error(e)
@@ -46,13 +48,47 @@ export default function AdminEmailVerificationsPage() {
       const { data: sessionData } = await supabase.auth.getSession()
       const adminEmail = sessionData?.session?.user?.email || "admin"
 
-      await supabase.from("email_verification_requests").update({ status: "verified", verified_at: new Date().toISOString(), verified_by: adminEmail }).eq("id", id)
+      console.log("Request ID:", id)
+      const payload = { status: "approved", verified_at: new Date().toISOString(), verified_by: adminEmail }
+      console.log("Update payload:", payload)
+
+      const { data: upData, error: upErr } = await supabase
+        .from("email_verification_requests")
+        .update(payload)
+        .eq("id", id)
+
+      console.log("Update Data:", upData)
+      console.log("Update Error:", upErr)
+
+      if (upErr) {
+        console.warn("Direct update blocked, attempting server-side update via admin API", upErr)
+        // fallback to server API route which uses service role
+        try {
+          const url = '/api/admin/email-verification'
+          console.log('API URL:', url)
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestId: id, status: 'approved', adminEmail }),
+          })
+          const json = await res.json()
+          console.log('Server update response:', json)
+          if (!res.ok) throw new Error(json?.error || 'Server update failed')
+        } catch (e) {
+          console.error('Server-side update failed', e)
+          alert('Unable to approve request')
+          return
+        }
+      }
+
       // also update users table for quick lookup
       const { data: req } = await supabase.from("email_verification_requests").select("*").eq("id", id).single()
       if (req && req.email) {
         await supabase.from("users").upsert({ email: req.email, email_verification_status: "verified", email_verified_at: new Date().toISOString(), email_verified_by: adminEmail }, { onConflict: "email" })
       }
+
       loadRequests()
+      alert('Email verification approved')
     } catch (e) {
       console.error(e)
       alert("Unable to approve request")
@@ -61,11 +97,43 @@ export default function AdminEmailVerificationsPage() {
 
   const reject = async (id: number) => {
     try {
-      await supabase.from("email_verification_requests").update({ status: "rejected" }).eq("id", id)
+      console.log('Request ID:', id)
+      const payload = { status: 'rejected' }
+      console.log('Update payload:', payload)
+
+      const { data: upData, error: upErr } = await supabase
+        .from('email_verification_requests')
+        .update(payload)
+        .eq('id', id)
+
+      console.log('Update Data:', upData)
+      console.log('Update Error:', upErr)
+
+      if (upErr) {
+        console.warn('Direct update blocked, attempting server-side update via admin API', upErr)
+        try {
+          const url = '/api/admin/email-verification'
+          console.log('API URL:', url)
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestId: id, status: 'rejected' }),
+          })
+          const json = await res.json()
+          console.log('Server update response:', json)
+          if (!res.ok) throw new Error(json?.error || 'Server update failed')
+        } catch (e) {
+          console.error('Server-side update failed', e)
+          alert('Unable to reject request')
+          return
+        }
+      }
+
       loadRequests()
+      alert('Email verification rejected')
     } catch (e) {
       console.error(e)
-      alert("Unable to reject request")
+      alert('Unable to reject request')
     }
   }
 

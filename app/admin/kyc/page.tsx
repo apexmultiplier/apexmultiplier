@@ -6,15 +6,20 @@ import { supabase } from "@/lib/supabase"
 import { ArrowLeft, Check, X } from "lucide-react"
 
 interface KycRecord {
-  id: string
+  id: number | string
+  user_id?: string
   email: string
   full_name?: string
   unique_id?: string
   govt_id_name?: string
   govt_id_number?: string
-  kyc_selfie_url?: string
+  government_id_number?: string
+  document_url?: string
+  document_type?: string
+  document_front?: string
+  document_back?: string
   country?: string
-  kyc_status?: string
+  status?: string
   created_at: string
 }
 
@@ -22,15 +27,15 @@ export default function KycPage() {
   const router = useRouter()
   const [kycRequests, setKycRequests] = useState<KycRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<number | string | null>(null)
 
   useEffect(() => {
     loadKyc()
     const subscription = supabase
-      .channel("users")
+      .channel("kyc_requests")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "users" },
+        { event: "*", schema: "public", table: "kyc_requests" },
         () => loadKyc()
       )
       .subscribe()
@@ -42,66 +47,83 @@ export default function KycPage() {
 
   const loadKyc = async () => {
     const { data } = await supabase
-      .from("users")
+      .from("kyc_requests")
       .select("*")
-      .neq("govt_id_number", null)
       .order("created_at", { ascending: false })
 
     setKycRequests(data || [])
     setLoading(false)
   }
 
-  const updateKycStatus = async (id: string, status: string) => {
+  const updateKycStatus = async (id: number | string, status: string) => {
     setUpdatingId(id)
-    // prepare update payload
-    const payload: any = { kyc_status: status }
-    if (status === "Approved") {
-      payload.kyc_verified_at = new Date().toISOString()
-    } else {
-      payload.kyc_verified_at = null
-    }
+    // find the kyc request to get the user id
+    try {
+      const { data: reqData, error: rErr } = await supabase.from('kyc_requests').select('*').eq('id', id).single()
+      if (rErr || !reqData) {
+        alert(rErr?.message || 'KYC request not found')
+        setUpdatingId(null)
+        return
+      }
 
-    const { error } = await supabase
-      .from("users")
-      .update(payload)
-      .eq("id", id)
+      // update kyc_requests status
+      const statusStored = String(status).toLowerCase()
+      const { error: kErr } = await supabase.from('kyc_requests').update({ status: statusStored }).eq('id', id)
+      if (kErr) {
+        alert(kErr.message)
+        setUpdatingId(null)
+        return
+      }
 
-    if (error) {
-      alert(error.message)
+      // also update users table kyc_status for the user
+      const userId = reqData.user_id
+      const payload: any = { kyc_status: String(status).charAt(0).toUpperCase() + String(status).slice(1) }
+      if (String(status).toLowerCase() === 'approved') payload.kyc_verified_at = new Date().toISOString()
+      else payload.kyc_verified_at = null
+
+      const { error: uErr } = await supabase.from('users').update(payload).eq('id', userId)
+      if (uErr) console.warn('Failed to update users.kyc_status', uErr)
+    } catch (e) {
+      console.warn('updateKycStatus error', e)
       setUpdatingId(null)
       return
     }
 
-    // try to insert a notification for the user
+    // try to insert a notification for the user (using the request's user_id)
     try {
+      const { data: reqData2 } = await supabase.from('kyc_requests').select('*').eq('id', id).single()
+      const targetUserId = reqData2?.user_id
       let notifType = "KYC Updated"
-      let notifTitle = `KYC status: ${status}`
+      let notifTitle = `KYC status: ${String(status).charAt(0).toUpperCase() + String(status).slice(1)}`
       let notifMessage = ''
-      if (status === 'Approved') {
+      const statusLower = String(status).toLowerCase()
+      if (statusLower === 'approved') {
         notifType = 'KYC Approved'
         notifTitle = 'KYC Approved'
         notifMessage = 'Your KYC documents have been approved. Thank you.'
-      } else if (status === 'Rejected') {
+      } else if (statusLower === 'rejected') {
         notifType = 'KYC Rejected'
         notifTitle = 'KYC Rejected'
         notifMessage = 'Your KYC documents were rejected. Please resubmit.'
-      } else if (status === 'Resubmission Requested') {
+      } else if (statusLower === 'resubmission_requested' || statusLower === 'resubmission requested') {
         notifType = 'KYC Resubmission'
         notifTitle = 'KYC Resubmission Requested'
         notifMessage = 'Please resubmit your KYC documents following the admin feedback.'
       } else {
-        notifMessage = `Your KYC status has been updated to ${status}`
+        notifMessage = `Your KYC status has been updated to ${String(status).charAt(0).toUpperCase() + String(status).slice(1)}`
       }
 
-      const { error: nErr } = await supabase.from('notifications').insert([{
-        user_id: id,
-        type: notifType,
-        title: notifTitle,
-        message: notifMessage,
-        read: false,
-      }])
+      if (targetUserId) {
+        const { error: nErr } = await supabase.from('notifications').insert([{
+          user_id: targetUserId,
+          type: notifType,
+          title: notifTitle,
+          message: notifMessage,
+          read: false,
+        }])
 
-      if (nErr) console.warn('Failed to insert notification', nErr)
+        if (nErr) console.warn('Failed to insert notification', nErr)
+      }
     } catch (e) {
       console.warn('Notify error', e)
     }
@@ -113,7 +135,7 @@ export default function KycPage() {
 
   const [selected, setSelected] = useState<KycRecord | null>(null)
 
-  const requestResubmission = (id: string) => {
+  const requestResubmission = (id: number | string) => {
     if (!confirm('Request resubmission for this user?')) return
     updateKycStatus(id, 'Resubmission Requested')
   }
@@ -174,38 +196,33 @@ export default function KycPage() {
                           <td className="py-4 px-4 text-zinc-400 text-xs">{kyc.unique_id || '—'}</td>
                       <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
                       <td className="py-4 px-4">{kyc.full_name || "—"}</td>
-                      <td className="py-4 px-4">{kyc.country || "—"}</td>
-                      <td className="py-4 px-4">{kyc.govt_id_name || "—"}</td>
+                        <td className="py-4 px-4">{kyc.country || "—"}</td>
+                      <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || "—"}</td>
                       <td className="py-4 px-4 text-xs text-zinc-400">
-                        {kyc.govt_id_number || "—"}
+                        {kyc.government_id_number || kyc.govt_id_number || "—"}
                       </td>
                       <td className="py-4 px-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs ${
-                            kyc.kyc_status === "Approved"
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : kyc.kyc_status === "Pending"
-                              ? "bg-amber-500/20 text-amber-400"
-                              : "bg-red-500/20 text-red-400"
-                          }`}
-                        >
-                          {kyc.kyc_status || "Pending"}
-                        </span>
+                        {(() => {
+                          const s = (kyc.status || "pending").toString().toLowerCase()
+                          const label = s.charAt(0).toUpperCase() + s.slice(1)
+                          const cls = s === "approved" ? "bg-emerald-500/20 text-emerald-400" : s === "pending" ? "bg-amber-500/20 text-amber-400" : "bg-red-500/20 text-red-400"
+                          return <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>{label}</span>
+                        })()}
                       </td>
                       <td className="py-4 px-4 text-zinc-400 text-xs">{date}</td>
                       <td className="py-4 px-4 text-zinc-400 text-xs">{time}</td>
                       <td className="py-4 px-4">
-                        {kyc.kyc_status !== "Approved" && kyc.kyc_status !== "Rejected" ? (
+                        {kyc.status?.toString().toLowerCase() !== "approved" && kyc.status?.toString().toLowerCase() !== "rejected" ? (
                           <div className="flex gap-2 justify-center">
                             <button
-                              onClick={() => updateKycStatus(kyc.id, "Approved")}
+                              onClick={() => updateKycStatus(kyc.id, "approved")}
                               disabled={updatingId === kyc.id}
                               className="p-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 transition disabled:opacity-50"
                             >
                               <Check size={16} className="text-emerald-400" />
                             </button>
                             <button
-                              onClick={() => updateKycStatus(kyc.id, "Rejected")}
+                              onClick={() => updateKycStatus(kyc.id, "rejected")}
                               disabled={updatingId === kyc.id}
                               className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition disabled:opacity-50"
                             >
@@ -243,22 +260,30 @@ export default function KycPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-zinc-400 text-sm">Selfie</p>
-                    {selected.kyc_selfie_url ? (
+                    <p className="text-zinc-400 text-sm">Front Document</p>
+                    {selected.document_front ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={selected.kyc_selfie_url} alt="selfie" className="w-full rounded-lg mt-2" />
+                      <img src={selected.document_front} alt="document front" className="w-full rounded-lg mt-2" />
                     ) : (
-                      <div className="text-zinc-400 mt-2">No selfie uploaded</div>
+                      <div className="text-zinc-400 mt-2">No front document uploaded</div>
+                    )}
+                    <p className="text-zinc-400 text-sm mt-3">Back Document</p>
+                    {selected.document_back ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={selected.document_back} alt="document back" className="w-full rounded-lg mt-2" />
+                    ) : (
+                      <div className="text-zinc-400 mt-2">No back document uploaded</div>
                     )}
                   </div>
 
                   <div>
                     <p className="text-zinc-400 text-sm">ID Details</p>
                     <div className="mt-2 text-sm text-zinc-200">
-                      <div><strong>Name:</strong> {selected.govt_id_name || '—'}</div>
-                      <div><strong>Number:</strong> {selected.govt_id_number || '—'}</div>
+                      <div><strong>Name:</strong> {selected.full_name || selected.govt_id_name || '—'}</div>
+                      <div><strong>Number:</strong> {selected.government_id_number || selected.govt_id_number || '—'}</div>
+                      <div><strong>Type:</strong> {selected.document_type || selected.govt_id_name || '—'}</div>
                       <div><strong>UID:</strong> {selected.unique_id || '—'}</div>
-                      <div className="mt-2"><strong>Status:</strong> {selected.kyc_status || 'Pending'}</div>
+                      <div className="mt-2"><strong>Status:</strong> {(selected.status || 'pending').toString().charAt(0).toUpperCase() + (selected.status || 'pending').toString().slice(1)}</div>
                     </div>
                   </div>
                 </div>

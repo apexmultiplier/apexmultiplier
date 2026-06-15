@@ -49,6 +49,7 @@ export default function DashboardProfilePage() {
   const [kycStatus, setKycStatus] = useState("Not Started")
   const [govtIdName, setGovtIdName] = useState("")
   const [govtIdNumber, setGovtIdNumber] = useState("")
+  const [country, setCountry] = useState("")
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [selfiePreview, setSelfiePreview] = useState("")
   const [saving, setSaving] = useState(false)
@@ -114,10 +115,11 @@ export default function DashboardProfilePage() {
       setGovtIdName(
         profileData.govt_id_name || profileData.full_name || ""
       )
-      setGovtIdNumber(
-        profileData.govt_id_number || profileData.govt_id || ""
-      )
-      setSelfiePreview(profileData.kyc_selfie_url || "")
+        setGovtIdNumber(
+          profileData.govt_id_number || profileData.govt_id || ""
+        )
+        setCountry(profileData.country || profileData.country_of_residence || "")
+        setSelfiePreview(profileData.kyc_selfie_url || "")
     } else {
       setUniqueId(generateShortId(user.id))
     }
@@ -143,6 +145,27 @@ export default function DashboardProfilePage() {
       // ignore
     }
 
+    // load latest KYC request for this user (from kyc_requests table)
+    try {
+      const { data: k } = await supabase
+        .from("kyc_requests")
+        .select("*")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+
+      const latestKyc = k && k[0]
+      if (latestKyc && latestKyc.status) {
+        const ks = (latestKyc.status || "").toString().toLowerCase()
+        if (ks === "pending") setKycStatus("Pending")
+        else if (ks === "approved") setKycStatus("Approved")
+        else if (ks === "rejected") setKycStatus("Rejected")
+        else setKycStatus(ks.charAt(0).toUpperCase() + ks.slice(1))
+      }
+    } catch (e) {
+      // ignore kyc fetch errors
+    }
+
     setLoading(false)
   }
 
@@ -159,15 +182,19 @@ export default function DashboardProfilePage() {
         return
       }
 
-      const { data, error } = await supabase
-        .from("email_verification_requests")
-        .insert([
-          {
-            user_id: user.id,
-            email: user.email,
-            status: "pending",
-          },
-        ])
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      const payload = {
+        user_id: user.id,
+        email: user.email,
+        otp,
+        status: "pending",
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      }
+
+      console.log("Generated OTP:", otp)
+      console.log("Payload:", payload)
+
+      const { data, error } = await supabase.from("email_verification_requests").insert([payload])
 
       if (error) {
         console.error(error)
@@ -302,8 +329,8 @@ export default function DashboardProfilePage() {
   const submitKyc = async () => {
     setKycSaving(true)
 
-    if (!govtIdName || !govtIdNumber || (!selfieFile && !selfiePreview)) {
-      alert("Please complete all KYC fields and upload a selfie.")
+    if (!govtIdName || !country || !govtIdNumber || (!selfieFile && !selfiePreview)) {
+      alert("Please complete all KYC fields (including Country) and upload a selfie.")
       setKycSaving(false)
       return
     }
@@ -338,35 +365,37 @@ export default function DashboardProfilePage() {
       }
     }
 
-    const { error } = await supabase
-      .from("users")
-      .upsert(
+    // Insert KYC record into the existing `kyc_requests` table (required schema fields).
+    try {
+      const { data: kData, error: kErr } = await supabase.from("kyc_requests").insert([
         {
+          user_id: user.id,
           email: user.email,
           full_name: userName,
-          mobile_number: mobileNumber,
-          dob: dob,
-          withdraw_network: withdrawNetwork,
-          wallet_address: walletAddress,
-          unique_id: uniqueId || generateShortId(user.id),
-          govt_id_name: govtIdName,
-          govt_id_number: govtIdNumber,
-          kyc_selfie_url: selfieUrl,
-          kyc_status: "Pending",
+          country: country,
+          government_id_number: govtIdNumber,
+          document_type: "selfie",
+          document_front: selfieUrl,
+          document_back: null,
+          status: "pending",
         },
-        { onConflict: "email" }
-      )
+      ])
 
-    if (error) {
-      console.log(error)
-      alert(error.message)
+      if (kErr) {
+        console.error("Failed to insert kyc_requests:", kErr)
+        alert("Failed to submit KYC: " + (kErr.message || "unknown error"))
+        setKycSaving(false)
+        return
+      }
+
+      setKycStatus("Pending")
+      alert("KYC submitted. Admin will verify your documents soon.")
+    } catch (e) {
+      console.error("KYC submit error:", e)
+      alert("Failed to submit KYC. Please try again.")
+    } finally {
       setKycSaving(false)
-      return
     }
-
-    setKycStatus("Pending")
-    alert("KYC submitted. Admin will verify your documents soon.")
-    setKycSaving(false)
   }
 
   if (loading) {
@@ -609,6 +638,210 @@ export default function DashboardProfilePage() {
                   placeholder="Enter name on govt ID"
                   className="mt-3 w-full input-glass"
                 />
+              </div>
+
+              <div>
+                <p className="text-zinc-400 text-sm">Country</p>
+                <input
+                  list="country-list"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  placeholder="Select Country"
+                  className="mt-3 w-full input-glass"
+                />
+                <datalist id="country-list">
+                  <option value="Afghanistan" />
+                  <option value="Albania" />
+                  <option value="Algeria" />
+                  <option value="Andorra" />
+                  <option value="Angola" />
+                  <option value="Antigua and Barbuda" />
+                  <option value="Argentina" />
+                  <option value="Armenia" />
+                  <option value="Australia" />
+                  <option value="Austria" />
+                  <option value="Azerbaijan" />
+                  <option value="Bahamas" />
+                  <option value="Bahrain" />
+                  <option value="Bangladesh" />
+                  <option value="Barbados" />
+                  <option value="Belarus" />
+                  <option value="Belgium" />
+                  <option value="Belize" />
+                  <option value="Benin" />
+                  <option value="Bhutan" />
+                  <option value="Bolivia" />
+                  <option value="Bosnia and Herzegovina" />
+                  <option value="Botswana" />
+                  <option value="Brazil" />
+                  <option value="Brunei" />
+                  <option value="Bulgaria" />
+                  <option value="Burkina Faso" />
+                  <option value="Burundi" />
+                  <option value="Cabo Verde" />
+                  <option value="Cambodia" />
+                  <option value="Cameroon" />
+                  <option value="Canada" />
+                  <option value="Central African Republic" />
+                  <option value="Chad" />
+                  <option value="Chile" />
+                  <option value="China" />
+                  <option value="Colombia" />
+                  <option value="Comoros" />
+                  <option value="Costa Rica" />
+                  <option value="Cote d'Ivoire" />
+                  <option value="Croatia" />
+                  <option value="Cuba" />
+                  <option value="Cyprus" />
+                  <option value="Czechia (Czech Republic)" />
+                  <option value="Denmark" />
+                  <option value="Djibouti" />
+                  <option value="Dominica" />
+                  <option value="Dominican Republic" />
+                  <option value="Ecuador" />
+                  <option value="Egypt" />
+                  <option value="El Salvador" />
+                  <option value="Estonia" />
+                  <option value="Eswatini" />
+                  <option value="Ethiopia" />
+                  <option value="Fiji" />
+                  <option value="Finland" />
+                  <option value="France" />
+                  <option value="Gabon" />
+                  <option value="Gambia" />
+                  <option value="Georgia" />
+                  <option value="Germany" />
+                  <option value="Ghana" />
+                  <option value="Greece" />
+                  <option value="Grenada" />
+                  <option value="Guatemala" />
+                  <option value="Guinea" />
+                  <option value="Guinea-Bissau" />
+                  <option value="Guyana" />
+                  <option value="Haiti" />
+                  <option value="Honduras" />
+                  <option value="Hungary" />
+                  <option value="Iceland" />
+                  <option value="India" />
+                  <option value="Indonesia" />
+                  <option value="Iran" />
+                  <option value="Iraq" />
+                  <option value="Ireland" />
+                  <option value="Israel" />
+                  <option value="Italy" />
+                  <option value="Jamaica" />
+                  <option value="Japan" />
+                  <option value="Jordan" />
+                  <option value="Kazakhstan" />
+                  <option value="Kenya" />
+                  <option value="Kiribati" />
+                  <option value="Kuwait" />
+                  <option value="Kyrgyzstan" />
+                  <option value="Laos" />
+                  <option value="Latvia" />
+                  <option value="Lebanon" />
+                  <option value="Lesotho" />
+                  <option value="Liberia" />
+                  <option value="Libya" />
+                  <option value="Liechtenstein" />
+                  <option value="Lithuania" />
+                  <option value="Luxembourg" />
+                  <option value="Madagascar" />
+                  <option value="Malawi" />
+                  <option value="Malaysia" />
+                  <option value="Maldives" />
+                  <option value="Mali" />
+                  <option value="Malta" />
+                  <option value="Marshall Islands" />
+                  <option value="Mauritania" />
+                  <option value="Mauritius" />
+                  <option value="Mexico" />
+                  <option value="Micronesia" />
+                  <option value="Moldova" />
+                  <option value="Monaco" />
+                  <option value="Mongolia" />
+                  <option value="Montenegro" />
+                  <option value="Morocco" />
+                  <option value="Mozambique" />
+                  <option value="Myanmar" />
+                  <option value="Namibia" />
+                  <option value="Nauru" />
+                  <option value="Nepal" />
+                  <option value="Netherlands" />
+                  <option value="New Zealand" />
+                  <option value="Nicaragua" />
+                  <option value="Niger" />
+                  <option value="Nigeria" />
+                  <option value="North Korea" />
+                  <option value="North Macedonia" />
+                  <option value="Norway" />
+                  <option value="Oman" />
+                  <option value="Pakistan" />
+                  <option value="Palau" />
+                  <option value="Panama" />
+                  <option value="Papua New Guinea" />
+                  <option value="Paraguay" />
+                  <option value="Peru" />
+                  <option value="Philippines" />
+                  <option value="Poland" />
+                  <option value="Portugal" />
+                  <option value="Qatar" />
+                  <option value="Romania" />
+                  <option value="Russia" />
+                  <option value="Rwanda" />
+                  <option value="Saint Kitts and Nevis" />
+                  <option value="Saint Lucia" />
+                  <option value="Saint Vincent and the Grenadines" />
+                  <option value="Samoa" />
+                  <option value="San Marino" />
+                  <option value="Sao Tome and Principe" />
+                  <option value="Saudi Arabia" />
+                  <option value="Senegal" />
+                  <option value="Serbia" />
+                  <option value="Seychelles" />
+                  <option value="Sierra Leone" />
+                  <option value="Singapore" />
+                  <option value="Slovakia" />
+                  <option value="Slovenia" />
+                  <option value="Solomon Islands" />
+                  <option value="Somalia" />
+                  <option value="South Africa" />
+                  <option value="South Korea" />
+                  <option value="South Sudan" />
+                  <option value="Spain" />
+                  <option value="Sri Lanka" />
+                  <option value="Sudan" />
+                  <option value="Suriname" />
+                  <option value="Sweden" />
+                  <option value="Switzerland" />
+                  <option value="Syria" />
+                  <option value="Taiwan" />
+                  <option value="Tajikistan" />
+                  <option value="Tanzania" />
+                  <option value="Thailand" />
+                  <option value="Timor-Leste" />
+                  <option value="Togo" />
+                  <option value="Tonga" />
+                  <option value="Trinidad and Tobago" />
+                  <option value="Tunisia" />
+                  <option value="Turkey" />
+                  <option value="Turkmenistan" />
+                  <option value="Tuvalu" />
+                  <option value="Uganda" />
+                  <option value="Ukraine" />
+                  <option value="United Arab Emirates" />
+                  <option value="United Kingdom" />
+                  <option value="United States" />
+                  <option value="Uruguay" />
+                  <option value="Uzbekistan" />
+                  <option value="Vanuatu" />
+                  <option value="Vatican City" />
+                  <option value="Venezuela" />
+                  <option value="Vietnam" />
+                  <option value="Yemen" />
+                  <option value="Zambia" />
+                  <option value="Zimbabwe" />
+                </datalist>
               </div>
 
               <div>

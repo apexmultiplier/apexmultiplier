@@ -130,7 +130,7 @@ export default function AdminPage() {
     // pending email verifications
     try {
       const { data: ev } = await supabase
-        .from('email_verification_requests')
+        .from('verification_requests')
         .select('id')
         .eq('status', 'pending')
 
