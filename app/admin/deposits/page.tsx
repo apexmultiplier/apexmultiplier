@@ -13,6 +13,10 @@ type Deposit = {
   method?: string | null
   screenshot_url?: string | null
   screenshot?: string | null
+  transaction_hash?: string | null
+  txhash?: string | null
+  plan_name?: string | null
+  user_id?: string | null
   created_at?: string | null
   admin_note?: string | null
 }
@@ -117,80 +121,131 @@ export default function AdminDepositsPage() {
           <div className="space-y-6">
             {error && <div className="text-red-400 p-4 rounded-lg">{error}</div>}
 
-            {['pending','approved','rejected'].map((st) => {
-              const list = deposits.filter((d) => (d.status || 'pending').toLowerCase() === st)
-              return (
-                <div key={st}>
-                  <h2 className="text-2xl font-bold mb-3">{st.charAt(0).toUpperCase() + st.slice(1)} Deposits ({list.length})</h2>
-                  {list.length === 0 ? (
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-zinc-400">No {st} deposits</div>
-                  ) : (
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-4 overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-zinc-400 border-b border-white/10">
-                            <th className="text-left py-3 px-3">User</th>
-                            <th className="text-left py-3 px-3">UID</th>
-                            <th className="text-left py-3 px-3">Amount</th>
-                            <th className="text-left py-3 px-3">Payment Method</th>
-                            <th className="text-left py-3 px-3">Screenshot</th>
-                            <th className="text-left py-3 px-3">Date</th>
-                            <th className="text-left py-3 px-3">Admin Note</th>
-                            <th className="text-left py-3 px-3">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {list.map((deposit) => (
-                            <tr key={deposit.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                              <td className="py-3 px-3">
-                                <div className="text-sm font-medium">{usersMap[deposit.email]?.full_name || deposit.email}</div>
-                                <div className="text-xs text-zinc-400">{deposit.email}</div>
-                              </td>
-                              <td className="py-3 px-3 text-xs text-zinc-400">{usersMap[deposit.email]?.unique_id || usersMap[deposit.email]?.id || '—'}</td>
-                              <td className="py-3 px-3">${Number(deposit.amount || 0).toFixed(2)}</td>
-                              <td className="py-3 px-3 text-zinc-400">{(deposit.payment_method || deposit.method || deposit.network) || '—'}</td>
-                              <td className="py-3 px-3">
-                                {deposit.screenshot_url || deposit.screenshot ? (
-                                  <a href={deposit.screenshot_url || deposit.screenshot || "#"} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View</a>
-                                ) : (
-                                  <span className="text-zinc-400">—</span>
-                                )}
-                              </td>
-                              <td className="py-3 px-3 text-zinc-400 text-xs">{deposit.created_at ? new Date(deposit.created_at).toLocaleString() : '—'}</td>
-                              <td className="py-3 px-3">
-                                <input value={adminNotes[deposit.id] || (deposit.admin_note || '')} onChange={(e) => setAdminNotes((s) => ({ ...s, [deposit.id]: e.target.value }))} className="w-full rounded-lg bg-black/30 px-3 py-2 text-sm outline-none" placeholder="Add admin note" />
-                                <div className="mt-2 text-xs text-zinc-400">Existing: {deposit.admin_note || '—'}</div>
-                              </td>
-                              <td className="py-3 px-3">
-                                <div className="flex gap-2">
-                                  <button disabled={actionLoading[deposit.id]} onClick={() => updateStatus(deposit.id, 'approved')} className="px-3 py-2 rounded-md bg-emerald-500/20 text-emerald-400 text-sm">{actionLoading[deposit.id] ? '...' : 'Approve'}</button>
-                                  <button disabled={actionLoading[deposit.id]} onClick={() => updateStatus(deposit.id, 'rejected')} className="px-3 py-2 rounded-md bg-red-500/20 text-red-400 text-sm">{actionLoading[deposit.id] ? '...' : 'Reject'}</button>
-                                  <button disabled={actionLoading[deposit.id]} onClick={async () => {
-                                    setActionLoading((s) => ({ ...s, [deposit.id]: true }))
-                                    try {
-                                      const note = adminNotes[deposit.id]
-                                      const { error: noteErr } = await supabase.from('deposits').update({ admin_note: note || null }).eq('id', deposit.id)
-                                      if (noteErr) throw noteErr
-                                      alert('Note saved')
-                                      await fetchDeposits()
-                                    } catch (err: any) {
-                                      console.error(err)
-                                      alert(err.message || 'Failed to save note')
-                                    } finally {
-                                      setActionLoading((s) => ({ ...s, [deposit.id]: false }))
-                                    }
-                                  }} className="px-3 py-2 rounded-md bg-white/5 text-zinc-200 text-sm">Save Note</button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+            {/* Pending, Approved, Rejected sections */}
+            {(() => {
+              const pending = deposits.filter((d) => (d.status || 'pending').toLowerCase() === 'pending')
+              const approved = deposits.filter((d) => (d.status || '').toLowerCase() === 'approved')
+              const rejected = deposits.filter((d) => (d.status || '').toLowerCase() === 'rejected')
+
+              const renderTxn = (deposit: Deposit) => {
+                const txnHash = (deposit as any).transaction_hash || (deposit as any).txhash || null
+                if (!txnHash) return <span className="text-zinc-400">—</span>
+                const short = txnHash.length > 20 ? `${txnHash.slice(0,10)}...${txnHash.slice(-10)}` : txnHash
+                return (
+                  <div className="flex items-center gap-2">
+                    <span title={txnHash} className="font-mono text-xs">{short}</span>
+                    <button onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(txnHash)
+                        alert('Transaction hash copied')
+                      } catch (err) {
+                        console.error(err)
+                        alert('Failed to copy transaction hash')
+                      }
+                    }} className="text-zinc-400 hover:text-white text-xs">Copy</button>
+                  </div>
+                )
+              }
+
+              const Table = ({ list, showActions }: { list: Deposit[]; showActions?: boolean }) => (
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-zinc-400 border-b border-white/10">
+                        <th className="text-left py-3 px-3">Email</th>
+                        <th className="text-left py-3 px-3">Plan</th>
+                        <th className="text-left py-3 px-3">Amount</th>
+                        <th className="text-left py-3 px-3">Network</th>
+                        <th className="text-left py-3 px-3">TX Hash</th>
+                        <th className="text-left py-3 px-3">Screenshot</th>
+                        <th className="text-left py-3 px-3">Status</th>
+                        <th className="text-left py-3 px-3">Date</th>
+                        <th className="text-left py-3 px-3">Time</th>
+                        <th className="text-left py-3 px-3">Admin Note</th>
+                        {showActions && <th className="text-left py-3 px-3">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((deposit) => (
+                        <tr key={deposit.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="py-3 px-3">
+                            <div className="text-sm font-medium">{usersMap[deposit.email]?.full_name || deposit.email}</div>
+                            <div className="text-xs text-zinc-400">{deposit.email}</div>
+                          </td>
+                          <td className="py-3 px-3 text-xs text-zinc-400">{(deposit as any).plan_name || '—'}</td>
+                          <td className="py-3 px-3">${Number(deposit.amount || 0).toFixed(2)}</td>
+                          <td className="py-3 px-3 text-zinc-400">{(deposit.network || deposit.payment_method || deposit.method) || '—'}</td>
+                          <td className="py-3 px-3 text-zinc-400 text-xs">{renderTxn(deposit)}</td>
+                          <td className="py-3 px-3">
+                            {deposit.screenshot_url || deposit.screenshot ? (
+                              <a href={deposit.screenshot_url || deposit.screenshot || "#"} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View</a>
+                            ) : (
+                              <span className="text-zinc-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            {(() => {
+                              const s = (deposit.status || 'pending').toString().toLowerCase()
+                              const cls = s === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : s === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'
+                              const label = s.charAt(0).toUpperCase() + s.slice(1)
+                              return <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>{label}</span>
+                            })()}
+                          </td>
+                          <td className="py-3 px-3 text-zinc-400 text-xs">{deposit.created_at ? new Date(deposit.created_at).toLocaleDateString() : '—'}</td>
+                          <td className="py-3 px-3 text-zinc-400 text-xs">{deposit.created_at ? new Date(deposit.created_at).toLocaleTimeString() : '—'}</td>
+                          <td className="py-3 px-3">
+                            <input value={adminNotes[deposit.id] || (deposit.admin_note || '')} onChange={(e) => setAdminNotes((s) => ({ ...s, [deposit.id]: e.target.value }))} className="w-full rounded-lg bg-black/30 px-3 py-2 text-sm outline-none" placeholder="Add admin note" />
+                            <div className="mt-2 text-xs text-zinc-400">Existing: {deposit.admin_note || '—'}</div>
+                          </td>
+                          {showActions && (
+                            <td className="py-3 px-3">
+                              <div className="flex gap-2">
+                                <button disabled={actionLoading[deposit.id]} onClick={() => updateStatus(deposit.id, 'approved')} className="px-3 py-2 rounded-md bg-emerald-500/20 text-emerald-400 text-sm">{actionLoading[deposit.id] ? '...' : 'Approve'}</button>
+                                <button disabled={actionLoading[deposit.id]} onClick={() => updateStatus(deposit.id, 'rejected')} className="px-3 py-2 rounded-md bg-red-500/20 text-red-400 text-sm">{actionLoading[deposit.id] ? '...' : 'Reject'}</button>
+                                <button disabled={actionLoading[deposit.id]} onClick={async () => {
+                                  setActionLoading((s) => ({ ...s, [deposit.id]: true }))
+                                  try {
+                                    const note = adminNotes[deposit.id]
+                                    const { error: noteErr } = await supabase.from('deposits').update({ admin_note: note || null }).eq('id', deposit.id)
+                                    if (noteErr) throw noteErr
+                                    alert('Note saved')
+                                    await fetchDeposits()
+                                  } catch (err: any) {
+                                    console.error(err)
+                                    alert(err.message || 'Failed to save note')
+                                  } finally {
+                                    setActionLoading((s) => ({ ...s, [deposit.id]: false }))
+                                  }
+                                }} className="px-3 py-2 rounded-md bg-white/5 text-zinc-200 text-sm">Save Note</button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )
-            })}
+
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-3">Pending Deposits ({pending.length})</h2>
+                    {pending.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-zinc-400">No pending deposit requests</div> : <div className="rounded-3xl border border-white/10 bg-white/5 p-4"><Table list={pending} showActions={true} /></div>}
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold mb-3">Approved Deposits ({approved.length})</h2>
+                    {approved.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-zinc-400">No approved deposits</div> : <div className="rounded-3xl border border-white/10 bg-white/5 p-4"><Table list={approved} /></div>}
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold mb-3">Rejected Deposits ({rejected.length})</h2>
+                    {rejected.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-zinc-400">No rejected deposits</div> : <div className="rounded-3xl border border-white/10 bg-white/5 p-4"><Table list={rejected} /></div>}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>

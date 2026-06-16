@@ -26,6 +26,8 @@ interface KycRecord {
 export default function KycPage() {
   const router = useRouter()
   const [kycRequests, setKycRequests] = useState<KycRecord[]>([])
+  const [pendingRequests, setPendingRequests] = useState<KycRecord[]>([])
+  const [approvedRequests, setApprovedRequests] = useState<KycRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<number | string | null>(null)
 
@@ -46,13 +48,24 @@ export default function KycPage() {
   }, [])
 
   const loadKyc = async () => {
-    const { data } = await supabase
-      .from("kyc_requests")
-      .select("*")
-      .order("created_at", { ascending: false })
+    setLoading(true)
+    try {
+      const [{ data: pending }, { data: approved }] = await Promise.all([
+        supabase.from("kyc_requests").select("*").eq('status', 'pending').order("created_at", { ascending: false }),
+        supabase.from("kyc_requests").select("*").eq('status', 'approved').order("updated_at", { ascending: false }),
+      ])
 
-    setKycRequests(data || [])
-    setLoading(false)
+      setPendingRequests(pending || [])
+      setApprovedRequests(approved || [])
+      // keep full list for backward compatibility where used
+      setKycRequests([...(pending || []), ...(approved || [])])
+    } catch (e) {
+      console.warn('loadKyc error', e)
+      setPendingRequests([])
+      setApprovedRequests([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const updateKycStatus = async (id: number | string, status: string) => {
@@ -169,88 +182,106 @@ export default function KycPage() {
             <p className="text-zinc-400">Loading KYC requests...</p>
           </div>
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10 text-zinc-400">
-                  <th className="text-left py-3 px-4">UID</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-left py-3 px-4">Full Name</th>
-                  <th className="text-left py-3 px-4">Country</th>
-                  <th className="text-left py-3 px-4">ID Type</th>
-                  <th className="text-left py-3 px-4">ID Number</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-left py-3 px-4">Submitted</th>
-                  <th className="text-left py-3 px-4">Time</th>
-                  <th className="text-center py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kycRequests.map((kyc) => {
-                  const { date, time } = formatDate(kyc.created_at)
-                  return (
-                    <tr
-                      key={kyc.id}
-                      className="border-b border-white/5 hover:bg-white/5 transition"
-                    >
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold">Pending KYC Requests ({pendingRequests.length})</h2>
+                  <p className="text-zinc-400 mt-1">Show only requests with status = 'pending'</p>
+                </div>
+              </div>
+
+              {pendingRequests.length === 0 ? (
+                <div className="text-zinc-400 text-center py-8">No pending KYC requests</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-zinc-400">
+                        <th className="text-left py-3 px-4">UID</th>
+                        <th className="text-left py-3 px-4">Email</th>
+                        <th className="text-left py-3 px-4">Full Name</th>
+                        <th className="text-left py-3 px-4">Country</th>
+                        <th className="text-left py-3 px-4">ID Type</th>
+                        <th className="text-left py-3 px-4">ID Number</th>
+                        <th className="text-left py-3 px-4">Status</th>
+                        <th className="text-left py-3 px-4">Submitted Time</th>
+                        <th className="text-center py-3 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingRequests.map((kyc) => {
+                        const { date, time } = formatDate(kyc.created_at)
+                        return (
+                          <tr key={kyc.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="py-4 px-4 text-zinc-400 text-xs">{kyc.unique_id || '—'}</td>
+                            <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
+                            <td className="py-4 px-4">{kyc.full_name || '—'}</td>
+                            <td className="py-4 px-4">{kyc.country || '—'}</td>
+                            <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || '—'}</td>
+                            <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || kyc.govt_id_number || '—'}</td>
+                            <td className="py-4 px-4"><span className="px-3 py-1 rounded-full text-xs bg-amber-500/20 text-amber-400">Pending</span></td>
+                            <td className="py-4 px-4 text-zinc-400 text-xs">{date} {time}</td>
+                            <td className="py-4 px-4">
+                              <div className="flex gap-2 justify-center">
+                                <button onClick={() => updateKycStatus(kyc.id, 'approved')} disabled={updatingId === kyc.id} className="p-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 transition disabled:opacity-50"><Check size={16} className="text-emerald-400" /></button>
+                                <button onClick={() => updateKycStatus(kyc.id, 'rejected')} disabled={updatingId === kyc.id} className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition disabled:opacity-50"><X size={16} className="text-red-400" /></button>
+                                <button onClick={() => requestResubmission(kyc.id)} disabled={updatingId === kyc.id} className="p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 transition disabled:opacity-50">Resubmit</button>
+                                <button onClick={() => setSelected(kyc)} className="p-2 rounded-lg bg-white/3 hover:bg-white/5">View</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold">Approved KYC Requests ({approvedRequests.length})</h2>
+                  <p className="text-zinc-400 mt-1">Show only requests with status = 'approved'</p>
+                </div>
+              </div>
+
+              {approvedRequests.length === 0 ? (
+                <div className="text-zinc-400 text-center py-8">No approved KYC records</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-zinc-400">
+                        <th className="text-left py-3 px-4">UID</th>
+                        <th className="text-left py-3 px-4">Email</th>
+                        <th className="text-left py-3 px-4">Full Name</th>
+                        <th className="text-left py-3 px-4">Country</th>
+                        <th className="text-left py-3 px-4">ID Type</th>
+                        <th className="text-left py-3 px-4">ID Number</th>
+                        <th className="text-left py-3 px-4">Status</th>
+                        <th className="text-left py-3 px-4">Approved Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {approvedRequests.map((kyc) => (
+                        <tr key={kyc.id} className="border-b border-white/5 hover:bg-white/5 transition">
                           <td className="py-4 px-4 text-zinc-400 text-xs">{kyc.unique_id || '—'}</td>
-                      <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
-                      <td className="py-4 px-4">{kyc.full_name || "—"}</td>
-                        <td className="py-4 px-4">{kyc.country || "—"}</td>
-                      <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || "—"}</td>
-                      <td className="py-4 px-4 text-xs text-zinc-400">
-                        {kyc.government_id_number || kyc.govt_id_number || "—"}
-                      </td>
-                      <td className="py-4 px-4">
-                        {(() => {
-                          const s = (kyc.status || "pending").toString().toLowerCase()
-                          const label = s.charAt(0).toUpperCase() + s.slice(1)
-                          const cls = s === "approved" ? "bg-emerald-500/20 text-emerald-400" : s === "pending" ? "bg-amber-500/20 text-amber-400" : "bg-red-500/20 text-red-400"
-                          return <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>{label}</span>
-                        })()}
-                      </td>
-                      <td className="py-4 px-4 text-zinc-400 text-xs">{date}</td>
-                      <td className="py-4 px-4 text-zinc-400 text-xs">{time}</td>
-                      <td className="py-4 px-4">
-                        {kyc.status?.toString().toLowerCase() !== "approved" && kyc.status?.toString().toLowerCase() !== "rejected" ? (
-                          <div className="flex gap-2 justify-center">
-                            <button
-                              onClick={() => updateKycStatus(kyc.id, "approved")}
-                              disabled={updatingId === kyc.id}
-                              className="p-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 transition disabled:opacity-50"
-                            >
-                              <Check size={16} className="text-emerald-400" />
-                            </button>
-                            <button
-                              onClick={() => updateKycStatus(kyc.id, "rejected")}
-                              disabled={updatingId === kyc.id}
-                              className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition disabled:opacity-50"
-                            >
-                              <X size={16} className="text-red-400" />
-                            </button>
-                            <button
-                              onClick={() => requestResubmission(kyc.id)}
-                              disabled={updatingId === kyc.id}
-                              className="p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 transition disabled:opacity-50"
-                            >
-                              Resubmit
-                            </button>
-                            <button
-                              onClick={() => setSelected(kyc)}
-                              className="p-2 rounded-lg bg-white/3 hover:bg-white/5"
-                            >
-                              View
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-zinc-500 text-xs">Completed</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                          <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
+                          <td className="py-4 px-4">{kyc.full_name || '—'}</td>
+                          <td className="py-4 px-4">{kyc.country || '—'}</td>
+                          <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || '—'}</td>
+                          <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || kyc.govt_id_number || '—'}</td>
+                          <td className="py-4 px-4"><span className="px-3 py-1 rounded-full text-xs bg-emerald-500/20 text-emerald-400">Approved</span></td>
+                          <td className="py-4 px-4 text-zinc-400 text-xs">{kyc.updated_at ? new Date(kyc.updated_at).toLocaleString() : (kyc.created_at ? new Date(kyc.created_at).toLocaleString() : '—')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
             {selected ? (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/3 p-4">
@@ -289,12 +320,6 @@ export default function KycPage() {
                 </div>
               </div>
             ) : null}
-
-            {kycRequests.length === 0 && (
-              <div className="text-center py-12 text-zinc-400">
-                No KYC requests found
-              </div>
-            )}
           </div>
         )}
       </div>

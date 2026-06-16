@@ -226,7 +226,9 @@ export default function AdminPage() {
       setPendingEmailVerifications(0)
     }
 
-    const pending = userList.filter((u: any) => (u.kyc_status === "Pending" || (!u.kyc_status && u.govt_id_number)))
+    const pending = userList.filter((u: any) => String(u.kyc_status || '').toLowerCase() === 'pending')
+    console.log('Pending KYC Records', pending)
+    console.log('Users source sample', userList.slice(0, 10))
     setPendingKyc(pending.slice(0, 5))
 
     setDeposits(depositList.slice(0, 8))
@@ -324,15 +326,7 @@ export default function AdminPage() {
               <p className="text-zinc-400 mt-2">Manage users, deposits, withdrawals, and KYC verifications.</p>
             </div>
 
-            <div className="rounded-3xl bg-white/5 border border-white/10 px-5 py-4 text-zinc-200">
-              <div className="flex items-center gap-3">
-                <Clock3 className="text-emerald-400" size={18} />
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Last updated</p>
-                  <p className="text-sm">{lastUpdated}</p>
-                </div>
-              </div>
-            </div>
+            {/* Last Updated removed as requested */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
