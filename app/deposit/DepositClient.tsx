@@ -186,7 +186,7 @@ export default function DepositClient() {
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
-          {Object.keys(wallets).map((item) => (
+          {Object.keys(wallets).map((item: keyof typeof wallets) => (
             <button
               key={item}
               onClick={() => setNetwork(item as keyof typeof wallets)}

@@ -115,8 +115,8 @@ export default function AdminWithdrawalsPage() {
           <div className="space-y-6">
             {error && <div className="text-red-400 p-4 rounded-lg">{error}</div>}
 
-            {['pending','approved','rejected'].map((st) => {
-              const list = withdrawals.filter((w) => (w.status || 'pending').toLowerCase() === st)
+            {['pending','approved','rejected'].map((st: string) => {
+              const list = withdrawals.filter((w: Withdrawal) => (w.status || 'pending').toLowerCase() === st)
               return (
                 <div key={st}>
                   <h2 className="text-2xl font-bold mb-3">{st.charAt(0).toUpperCase() + st.slice(1)} Withdrawals ({list.length})</h2>
@@ -137,7 +137,7 @@ export default function AdminWithdrawalsPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {list.map((w) => (
+                          {list.map((w: Withdrawal) => (
                             <tr key={w.id} className="border-b border-white/5 hover:bg-white/5 transition">
                               <td className="py-3 px-3">
                                 <div className="text-sm font-medium">{usersMap[w.email]?.full_name || w.email}</div>

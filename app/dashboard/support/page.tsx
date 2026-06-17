@@ -53,7 +53,7 @@ export default function DashboardSupport() {
               <p className="text-rose-400">{errorMessage}</p>
             ) : (
               <div className="space-y-4">
-                {tickets.length === 0 ? <p className="text-zinc-400">No tickets found.</p> : tickets.map((t) => (
+                {tickets.length === 0 ? <p className="text-zinc-400">No tickets found.</p> : tickets.map((t: any) => (
                   <div key={t.id} className="rounded-[12px] border border-white/8 bg-white/6 p-4">
                     <div className="flex items-center justify-between">
                       <div>

@@ -137,7 +137,7 @@ const reviews = [
   },
 ]
 
-const particlePositions = Array.from({ length: 30 }, (_, i) => ({
+const particlePositions = Array.from({ length: 30 }, (_: any, i: number) => ({
   left: `${(i * 13) % 100}%`,
   top: `${(i * 21) % 100}%`,
 }))
@@ -164,7 +164,7 @@ function FAQAccordion() {
 
   return (
     <div className="mt-4 space-y-3">
-      {faqs.map((f, i) => (
+      {faqs.map((f: any, i: number) => (
         <div key={i} className="rounded-[18px] border border-white/8 bg-white/4 overflow-hidden">
           <button
             onClick={() => setOpen(open === i ? null : i)}

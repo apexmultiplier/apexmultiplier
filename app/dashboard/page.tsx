@@ -155,7 +155,7 @@ export default function DashboardPage() {
   const [withdrawEnabled, setWithdrawEnabled] = useState(false)
 
   const [walletBalance, setWalletBalance] = useState(0)
-  const [planDetails, setPlanDetails] = useState<PlanDetail[]>([])
+  const [planDetails, setPlanDetails] = useState<any[]>([])
   const [totalProfit, setTotalProfit] = useState(0)
   const [totalLoss] = useState(0)
   const [roi, setRoi] = useState(0)
@@ -298,7 +298,7 @@ export default function DashboardPage() {
         supabase
           .from("user_plans")
           .select("*")
-          .ilike("user_email", user.email)
+          .ilike("user_email", user.email!)
           .order("created_at", { ascending: true }),
         supabase
           .from("withdrawals")
@@ -455,7 +455,7 @@ export default function DashboardPage() {
               })
 
               // refresh plans variable
-              const { data: refreshedPlans } = await supabase.from('user_plans').select('*').ilike('user_email', user.email).order('created_at', { ascending: true })
+              const { data: refreshedPlans } = await supabase.from('user_plans').select('*').ilike('user_email', user.email!).order('created_at', { ascending: true })
               if (refreshedPlans) {
                 plansData = refreshedPlans || []
                 // recompute activePlans after refresh
@@ -473,7 +473,7 @@ export default function DashboardPage() {
       // Build enriched plan details from ALL approved deposits (primary source).
       // This ensures one dashboard card per approved deposit (oldest -> newest).
       const approvedOnly = (approvedDeposits || []).filter((d: any) => String(d.status || '').toLowerCase() === 'approved')
-      let computedPlanDetails: PlanDetail[] = (approvedOnly || []).map((item: any) => {
+      let computedPlanDetails: any[] = (approvedOnly || []).map((item: any) => {
         const amountValue = Number(item.amount || 0)
         // try to find plan definition from investment_plans
         const found = (availablePlans || []).find((p: any) => ((p.title || '').toLowerCase() === (item.plan_name || '').toLowerCase()) || ((p.raw?.plan_name || '').toLowerCase() === (item.plan_name || '').toLowerCase()))
@@ -588,13 +588,13 @@ export default function DashboardPage() {
       }
 
       // Totals and aggregates must be computed from the selected plansForView.
-      const totalDepositSum = (plansForView || []).reduce((sum, item) => sum + Number(item.amountValue || item.investment || item.amount || 0), 0)
+      const totalDepositSum = (plansForView || []).reduce((sum: number, item: any) => sum + Number(item.amountValue || item.investment || item.amount || 0), 0)
 
-      const dailyProfitSum = (plansForView || []).reduce((sum, item) => sum + Number(item.dailyProfit || item.daily_profit || 0), 0)
+      const dailyProfitSum = (plansForView || []).reduce((sum: number, item: any) => sum + Number(item.dailyProfit || item.daily_profit || 0), 0)
 
-      const totalEarned = (plansForView || []).reduce((sum, item) => sum + Number(item.earnedForItem || 0), 0)
+      const totalEarned = (plansForView || []).reduce((sum: number, item: any) => sum + Number(item.earnedForItem || 0), 0)
 
-      const totalTradesPerDay = (plansForView || []).reduce((sum, item) => {
+      const totalTradesPerDay = (plansForView || []).reduce((sum: number, item: any) => {
         const amountValue = Number(item.amountValue || item.investment || item.amount || 0)
         if (amountValue >= 10000) return sum + 10
         if (amountValue >= 5000) return sum + 5
@@ -604,7 +604,7 @@ export default function DashboardPage() {
         return sum
       }, 0)
 
-      const totalDaysElapsed = (plansForView || []).reduce((max, item) => Math.max(max, item.daysElapsedForItem || 0), 0)
+      const totalDaysElapsed = (plansForView || []).reduce((max: number, item: any) => Math.max(max, item.daysElapsedForItem || 0), 0)
 
       let totalBonusAmount = 0
       try {
@@ -621,7 +621,7 @@ export default function DashboardPage() {
       }
 
       const totalWithdrawAmount =
-        withdrawals?.reduce((sum, item) => {
+        withdrawals?.reduce((sum: number, item: any) => {
           if (item.status === "rejected") return sum
           return sum + Number(item.amount || 0)
         }, 0) || 0
@@ -870,7 +870,7 @@ export default function DashboardPage() {
         const currentUser = authData?.user ?? null
         if (!currentUser) return
         await supabase.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false)
-        setNotifications((prev) => prev.map((p) => ({ ...p, read: true })))
+        setNotifications((prev: any[]) => prev.map((p: any) => ({ ...p, read: true })))
       } catch (err) {
         console.error('Failed to mark all read', err)
       }
@@ -879,7 +879,7 @@ export default function DashboardPage() {
     const markRead = async (id: number) => {
       try {
         await supabase.from('notifications').update({ read: true }).eq('id', id)
-        setNotifications((prev) => prev.map((p) => p.id === id ? { ...p, read: true } : p))
+        setNotifications((prev: any[]) => prev.map((p: any) => p.id === id ? { ...p, read: true } : p))
       } catch (err) {
         console.error('Failed to mark read', err)
       }
@@ -961,7 +961,7 @@ export default function DashboardPage() {
                         {notifications.length === 0 ? (
                           <div className="p-4 text-zinc-400">No notifications</div>
                         ) : (
-                          notifications.map((n) => (
+                          notifications.map((n: any) => (
                             <div key={n.id} className={`p-3 rounded-lg mb-2 ${n.read ? "opacity-60" : "bg-white/3"}`}> 
                               <button onClick={() => markRead(n.id)} className="w-full text-left">
                                 <div className="flex items-start justify-between">
@@ -1033,7 +1033,7 @@ export default function DashboardPage() {
 
         {/* ACTIVE PLANS: render one card per active plan in chronological order (first approved = top) */}
         {planDetails && planDetails.length > 0 ? (
-          planDetails.map((plan, idx) => {
+          planDetails.map((plan: any, idx: number) => {
             const theme = getPlanTheme(plan.plan_name)
             const Icon = theme.icon
             const ordinal = (n: number) => {
@@ -1149,7 +1149,7 @@ export default function DashboardPage() {
               icon: Activity,
               color: "from-purple-500 to-purple-400",
             },
-          ].map((item, i) => (
+          ].map((item: any, i: number) => (
             <GlassCard key={i} className="p-5 hover:scale-105 transition-transform">
 
               <div className="flex justify-between items-start">
@@ -1429,7 +1429,7 @@ export default function DashboardPage() {
 
               <tbody>
 
-                {transactions.map((item, i) => (
+                {transactions.map((item: any, i: number) => (
 
                   <tr
                     key={i}
@@ -1491,7 +1491,7 @@ export default function DashboardPage() {
               title: "24/7 Live Support",
               icon: CalendarDays,
             },
-          ].map((item, i) => (
+          ].map((item: any, i: number) => (
 
             <GlassCard
               key={i}

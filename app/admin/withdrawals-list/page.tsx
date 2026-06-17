@@ -108,7 +108,7 @@ export default function WithdrawalsPage() {
                 </tr>
               </thead>
               <tbody>
-                {withdrawals.map((withdrawal) => {
+                {withdrawals.map((withdrawal: WithdrawalRecord) => {
                   const { date, time } = formatDate(withdrawal.created_at)
                   return (
                     <tr
