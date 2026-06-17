@@ -31,7 +31,7 @@ export default function AdminWithdrawalsPage() {
     setError(null)
     try {
       const [{ data: wData, error: wErr }, { data: usersData, error: uErr }] = await Promise.all([
-        supabase.from("withdrawals").select("*").order("id", { ascending: false }),
+        supabase.from("withdrawals").select("*").order("created_at", { ascending: true }),
         supabase.from("users").select("id,email,unique_id,full_name").order("created_at", { ascending: false }),
       ])
 

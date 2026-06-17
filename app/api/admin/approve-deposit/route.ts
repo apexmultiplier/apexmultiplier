@@ -108,18 +108,11 @@ export async function POST(req: Request) {
       const startDate = now.toISOString()
       const endDate = new Date(now.getTime() + (duration || 30) * 24 * 60 * 60 * 1000).toISOString()
 
-      // Deactivate any existing active plans for this user (only one active plan allowed)
+      // Insert a new user_plans record for this approved deposit so every approved
+      // deposit becomes an independent plan. Do NOT deactivate or overwrite
+      // existing plans here — preserve historical plans.
       try {
         const userEmail = deposit.email || existingUser?.email || null
-        await adminSupabase.from('user_plans').update({ status: 'inactive' }).eq('user_email', userEmail).eq('status', 'active')
-      } catch (e) {
-        console.warn('Failed to deactivate existing user_plans', e)
-      }
-
-      // Insert or update user_plans with required fields
-      try {
-        const userEmail = deposit.email || existingUser?.email || null
-        const { data: existingPlanRows } = await adminSupabase.from('user_plans').select('*').eq('user_email', userEmail).limit(1)
         const planPayload = {
           user_email: userEmail,
           plan_name: matchedPlan.name || matchedPlan.title || null,
@@ -131,23 +124,16 @@ export async function POST(req: Request) {
           total_profit: totalProfit,
           start_date: startDate,
           end_date: endDate,
-          status: 'active'
+          status: 'active',
         }
 
-        console.log('user_plans payload', planPayload)
+        console.log('user_plans payload (insert)', planPayload)
 
-        if (existingPlanRows && existingPlanRows.length > 0) {
-          const existing = existingPlanRows[0]
-          const { error: updErr2 } = await adminSupabase.from('user_plans').update(planPayload).eq('id', existing.id)
-          if (updErr2) console.warn('Failed to update user_plans', updErr2)
-          else console.log('Updated user_plans record')
-        } else {
-          const { data: inserted, error: insertErr } = await adminSupabase.from('user_plans').insert([planPayload])
-          if (insertErr) console.warn('Failed to insert user_plans', insertErr)
-          else console.log('Inserted user_plans record', inserted)
-        }
+        const { data: inserted, error: insertErr } = await adminSupabase.from('user_plans').insert([planPayload])
+        if (insertErr) console.warn('Failed to insert user_plans', insertErr)
+        else console.log('Inserted user_plans record', inserted)
       } catch (e) {
-        console.warn('Error handling user_plans insert/update', e)
+        console.warn('Error inserting user_plans record', e)
       }
 
       // Create or update user_investments record (use foreign keys)

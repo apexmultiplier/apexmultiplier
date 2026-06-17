@@ -15,6 +15,7 @@ interface DepositRecord {
   plan_name?: string
   created_at: string
   user_id: string
+  screenshot_url?: string | null
 }
 
 export default function DepositsPage() {
@@ -22,6 +23,8 @@ export default function DepositsPage() {
   const [deposits, setDeposits] = useState<DepositRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<number | null>(null)
+  const [screenshotModalUrl, setScreenshotModalUrl] = useState<string | null>(null)
+  const [screenshotModalOpen, setScreenshotModalOpen] = useState(false)
 
   useEffect(() => {
     loadDeposits()
@@ -110,6 +113,7 @@ export default function DepositsPage() {
                   <th className="text-right py-3 px-4">Amount</th>
                   <th className="text-left py-3 px-4">Network</th>
                   <th className="text-left py-3 px-4">TX Hash</th>
+                  <th className="text-left py-3 px-4">Screenshot</th>
                   <th className="text-left py-3 px-4">Status</th>
                   <th className="text-left py-3 px-4">Date</th>
                   <th className="text-left py-3 px-4">Time</th>
@@ -130,6 +134,39 @@ export default function DepositsPage() {
                       <td className="py-4 px-4 text-xs">{deposit.network}</td>
                       <td className="py-4 px-4 text-xs text-zinc-400 max-w-xs truncate">
                         {deposit.txhash}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {deposit.screenshot_url ? (
+                          <button onClick={async () => {
+                            console.log('Deposit Record:', deposit)
+                            console.log('Screenshot URL:', deposit.screenshot_url)
+                            const rawUrl = deposit.screenshot_url as string | undefined | null
+                            const url = rawUrl ? rawUrl.trim() : null
+                            console.log('Normalized URL:', url)
+                            console.log('URL length:', url?.length)
+                            console.log('Contains expected path:', url?.includes('/storage/v1/object/public/deposit-screenshots/'))
+                            console.log('Is percent-encoded equal to raw:', encodeURI(url || '') === url)
+                            if (!url) {
+                              alert('No screenshot uploaded')
+                              return
+                            }
+                              try {
+                                const response = await fetch(url, { method: 'HEAD' })
+                                console.log('Screenshot status:', response.status)
+                              } catch (err) {
+                                console.error('Screenshot fetch error:', err)
+                              }
+                            try {
+                              window.open(url, '_blank')
+                            } catch (err) {
+                              console.error('window.open error:', err)
+                            }
+                            setScreenshotModalUrl(url)
+                            setScreenshotModalOpen(true)
+                          }} className="rounded-md px-3 py-1 bg-white/6 hover:bg-white/8 text-sm">View Screenshot</button>
+                        ) : (
+                          <span className="text-zinc-500 text-xs">—</span>
+                        )}
                       </td>
                       <td className="py-4 px-4">
                         <span
@@ -173,6 +210,29 @@ export default function DepositsPage() {
                 })}
               </tbody>
             </table>
+
+            {/* Screenshot modal */}
+            {screenshotModalOpen && screenshotModalUrl && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div onClick={() => setScreenshotModalOpen(false)} className="absolute inset-0 bg-black/60" />
+                <div className="relative z-10 max-w-3xl mx-4">
+                    <div className="rounded-2xl bg-black p-4">
+                    <img
+                      src={screenshotModalUrl}
+                      alt="Deposit Screenshot"
+                      className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                      onError={(e) => {
+                        console.error('Failed Image URL:', screenshotModalUrl)
+                        e.currentTarget.src = 'https://placehold.co/600x400?text=Screenshot+Not+Found'
+                      }}
+                    />
+                    <div className="flex justify-end mt-3">
+                      <button onClick={() => setScreenshotModalOpen(false)} className="rounded-2xl bg-white/6 py-2 px-4">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {deposits.length === 0 && (
               <div className="text-center py-12 text-zinc-400">

@@ -33,6 +33,8 @@ export default function AdminDepositsPage() {
   const [usersMap, setUsersMap] = useState<Record<string, any>>({})
   const [actionLoading, setActionLoading] = useState<Record<number, boolean>>({})
   const [adminNotes, setAdminNotes] = useState<Record<number, string>>({})
+  const [screenshotModalUrl, setScreenshotModalUrl] = useState<string | null>(null)
+  const [screenshotModalOpen, setScreenshotModalOpen] = useState(false)
 
   useEffect(() => {
     fetchDeposits()
@@ -43,7 +45,7 @@ export default function AdminDepositsPage() {
     setError(null)
     try {
       const [{ data: depositsData, error: dErr }, { data: usersData, error: uErr }] = await Promise.all([
-        supabase.from("deposits").select("*").order("id", { ascending: false }),
+        supabase.from("deposits").select("*").order("created_at", { ascending: true }),
         supabase.from("users").select("id,email,unique_id,full_name,balance").order("created_at", { ascending: false }),
       ])
 
@@ -177,8 +179,34 @@ export default function AdminDepositsPage() {
                           <td className="py-3 px-3 text-zinc-400">{(deposit.network || deposit.payment_method || deposit.method) || '—'}</td>
                           <td className="py-3 px-3 text-zinc-400 text-xs">{renderTxn(deposit)}</td>
                           <td className="py-3 px-3">
-                            {deposit.screenshot_url || deposit.screenshot ? (
-                              <a href={deposit.screenshot_url || deposit.screenshot || "#"} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View</a>
+                            {deposit.screenshot_url ? (
+                              <button onClick={async () => {
+                                console.log('Deposit Record:', deposit)
+                                console.log('Screenshot URL:', deposit.screenshot_url)
+                                const rawUrl = deposit.screenshot_url as string | undefined | null
+                                const url = rawUrl ? rawUrl.trim() : null
+                                console.log('Normalized URL:', url)
+                                console.log('URL length:', url?.length)
+                                console.log('Contains expected path:', url?.includes('/storage/v1/object/public/deposit-screenshots/'))
+                                console.log('Is percent-encoded equal to raw:', encodeURI(url || '') === url)
+                                if (!url) {
+                                  alert('No screenshot uploaded')
+                                  return
+                                }
+                                try {
+                                  const response = await fetch(url, { method: 'HEAD' })
+                                  console.log('Screenshot status:', response.status)
+                                } catch (err) {
+                                  console.error('Screenshot fetch error:', err)
+                                }
+                                try {
+                                  window.open(url, '_blank')
+                                } catch (err) {
+                                  console.error('window.open error:', err)
+                                }
+                                setScreenshotModalUrl(url)
+                                setScreenshotModalOpen(true)
+                              }} className="text-emerald-400 underline">View</button>
                             ) : (
                               <span className="text-zinc-400">—</span>
                             )}
@@ -246,6 +274,29 @@ export default function AdminDepositsPage() {
                 </div>
               )
             })()}
+
+            {screenshotModalOpen && screenshotModalUrl && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div onClick={() => setScreenshotModalOpen(false)} className="absolute inset-0 bg-black/60" />
+                <div className="relative z-10 max-w-3xl mx-4">
+                    <div className="rounded-2xl bg-black p-4">
+                    <img
+                      src={screenshotModalUrl}
+                      alt="Deposit Screenshot"
+                      className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                      onError={(e) => {
+                        console.error('Failed Image URL:', screenshotModalUrl)
+                        e.currentTarget.src = 'https://placehold.co/600x400?text=Screenshot+Not+Found'
+                      }}
+                    />
+                    <div className="flex justify-end mt-3">
+                      <button onClick={() => setScreenshotModalOpen(false)} className="rounded-2xl bg-white/6 py-2 px-4">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>

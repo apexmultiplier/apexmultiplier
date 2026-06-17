@@ -43,6 +43,8 @@ function DepositView() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // prioritize email passed via URL, then sessionStorage, then auth user
   const [userEmail, setUserEmail] = useState(() => {
@@ -81,6 +83,13 @@ function DepositView() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      console.log('handleDeposit - current user:', user)
+
+      if (!user) {
+        setError('Please login first to submit deposit and upload screenshot')
+        setLoading(false)
+        return
+      }
 
       if (user?.email) {
         setUserEmail(user.email)
@@ -156,13 +165,55 @@ function DepositView() {
         status: "pending",
       }
 
+      // If a screenshot file is provided, upload it to Supabase Storage
+      if (file) {
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+        if (!allowed.includes(file.type)) {
+          setError('Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP')
+          setLoading(false)
+          return
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          setError('File too large. Maximum 10 MB')
+          setLoading(false)
+          return
+        }
+
+        const fileName = `${Date.now()}_${file.name}`
+          try {
+            const uploadResult = await supabase.storage.from('deposit-screenshots').upload(fileName, file)
+            console.log('Upload Result:', uploadResult)
+            if (uploadResult.error) {
+              console.error('Upload error:', uploadResult.error)
+              setError(uploadResult.error.message || 'Failed to upload screenshot')
+              setLoading(false)
+              return
+            }
+            const publicUrlData = supabase.storage.from('deposit-screenshots').getPublicUrl(fileName)
+            console.log('getPublicUrl result:', publicUrlData)
+            const screenshotUrl = publicUrlData?.data?.publicUrl || null
+            console.log('Generated URL:', screenshotUrl)
+            depositData.screenshot_url = screenshotUrl
+          } catch (uploadErr: any) {
+          console.error('Unexpected upload error:', uploadErr)
+          setError(uploadErr.message || 'Failed to upload screenshot')
+          setLoading(false)
+          return
+        }
+      }
+
       if (user?.id) {
         depositData.user_id = user.id
       }
 
-      const { error: insertError } = await supabase
+      console.log('Inserting deposit payload:', depositData)
+      const { data: insertResult, error: insertError } = await supabase
         .from("deposits")
         .insert([depositData])
+        .select()
+        .single()
+
+      console.log('Deposit Insert Result:', { insertResult, insertError })
 
       if (insertError) {
         setError(insertError.message)
@@ -299,6 +350,30 @@ function DepositView() {
                   placeholder="Paste your TX hash here"
                   className="mt-3 w-full rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none transition focus:border-[#00ffae]/50 focus:ring-2 focus:ring-[#00ffae]/20"
                 />
+                <div className="mt-4">
+                  <p className="text-xs uppercase tracking-[0.35em] text-zinc-400">Deposit Screenshot (optional)</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <input id="deposit-screenshot" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={(e) => {
+                      const selected = e.target.files ? e.target.files[0] : null
+                      console.log('Selected Screenshot:', selected)
+                      setFile(selected)
+                      if (selected) setPreviewUrl(URL.createObjectURL(selected))
+                      else setPreviewUrl(null)
+                    }} className="hidden" />
+
+                    <label htmlFor="deposit-screenshot" className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-black hover:opacity-95 cursor-pointer">
+                      Upload Screenshot
+                    </label>
+
+                    {file ? (
+                      <div className="text-sm text-zinc-300">✔ {file.name}</div>
+                    ) : (
+                      <div className="text-sm text-zinc-500">No file selected</div>
+                    )}
+                  </div>
+
+                  {previewUrl ? <div className="mt-3"><img src={previewUrl} alt="preview" className="max-h-40 rounded-md" /></div> : null}
+                </div>
               </div>
 
               {error ? (

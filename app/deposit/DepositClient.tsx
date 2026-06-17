@@ -44,6 +44,8 @@ export default function DepositClient() {
   }, [queryPlan, availablePlans])
   const [hash, setHash] = useState("")
   const [loading, setLoading] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const selected = wallets[network]
 
@@ -101,6 +103,31 @@ export default function DepositClient() {
         planName = selectedPlanObj?.title || "Custom Plan"
       }
 
+      let screenshot_url: string | null = null
+      // If a file is attached, upload to Supabase Storage first
+      if (file) {
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+        if (!allowed.includes(file.type)) {
+          alert('Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP')
+          setLoading(false)
+          return
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File too large. Maximum 10 MB')
+          setLoading(false)
+          return
+        }
+
+        const fileName = `${Date.now()}_${file.name}`
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('deposit-screenshots').upload(fileName, file)
+        console.log('uploadData', uploadData, 'uploadError', uploadError)
+        if (uploadError) {
+          throw uploadError
+        }
+        const { data: { publicUrl } } = supabase.storage.from('deposit-screenshots').getPublicUrl(fileName)
+        screenshot_url = publicUrl
+      }
+
       const { data: insertedDeposit, error } = await supabase.from("deposits").insert([
         {
           user_id: user.id,
@@ -113,6 +140,7 @@ export default function DepositClient() {
           roi_percent: roiPercent,
           daily_profit: dailyProfit,
           total_profit: totalProfit,
+          screenshot_url,
         },
       ]).select().single()
 
@@ -138,6 +166,8 @@ export default function DepositClient() {
       alert("Deposit Submitted Successfully")
       setAmount("")
       setHash("")
+      setFile(null)
+      setPreviewUrl(null)
       router.push("/dashboard")
     } catch (err) {
       console.log(err)
@@ -200,6 +230,24 @@ export default function DepositClient() {
               placeholder="Transaction Hash"
               className="w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white outline-none"
             />
+
+            <div>
+              <label className="block text-sm text-zinc-300 mb-2">Deposit Screenshot (optional)</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+                const selected = e.target.files ? e.target.files[0] : null
+                setFile(selected)
+                if (selected) {
+                  setPreviewUrl(URL.createObjectURL(selected))
+                } else {
+                  setPreviewUrl(null)
+                }
+              }} />
+              {previewUrl && (
+                <div className="mt-2">
+                  <img src={previewUrl} alt="preview" className="max-h-40 rounded-md" />
+                </div>
+              )}
+            </div>
 
             <button
               type="button"
