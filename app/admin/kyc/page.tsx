@@ -21,6 +21,7 @@ interface KycRecord {
   country?: string
   status?: string
   created_at: string
+  updated_at?: string | null
 }
 
 export default function KycPage() {
