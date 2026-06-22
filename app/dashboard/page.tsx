@@ -190,6 +190,7 @@ export default function DashboardPage() {
   const [totalDays, setTotalDays] = useState(0)
   const [totalBonus, setTotalBonus] = useState(0)
   const [tradesPerDay, setTradesPerDay] = useState(0)
+  const [completedTrades, setCompletedTrades] = useState(0)
   const [portfolioValue, setPortfolioValue] = useState(0)
 
   useEffect(() => {
@@ -594,14 +595,24 @@ export default function DashboardPage() {
 
       const totalEarned = (plansForView || []).reduce((sum: number, item: any) => sum + Number(item.earnedForItem || 0), 0)
 
+      const getTradesPerDayForName = (name: string) => {
+        const n = (name || '').toLowerCase()
+        if (n.includes('starter')) return 3
+        if (n.includes('silver')) return 5
+        if (n.includes('premium')) return 8
+        if (n.includes('gold')) return 12
+        if (n.includes('elite')) return 20
+        return 0
+      }
+
       const totalTradesPerDay = (plansForView || []).reduce((sum: number, item: any) => {
-        const amountValue = Number(item.amountValue || item.investment || item.amount || 0)
-        if (amountValue >= 10000) return sum + 10
-        if (amountValue >= 5000) return sum + 5
-        if (amountValue >= 3000) return sum + 3
-        if (amountValue >= 1000) return sum + 2
-        if (amountValue >= 500) return sum + 1
-        return sum
+        return sum + getTradesPerDayForName(item.plan_name || '')
+      }, 0)
+
+      const totalCompletedTrades = (plansForView || []).reduce((sum: number, item: any) => {
+        const perDay = getTradesPerDayForName(item.plan_name || '')
+        const days = Number(item.daysElapsedForItem || 0)
+        return sum + perDay * days
       }, 0)
 
       const totalDaysElapsed = (plansForView || []).reduce((max: number, item: any) => Math.max(max, item.daysElapsedForItem || 0), 0)
@@ -647,6 +658,7 @@ export default function DashboardPage() {
       setTotalDays(totalDaysElapsed)
       setTotalBonus(totalBonusAmount)
       setTradesPerDay(totalTradesPerDay)
+      setCompletedTrades(totalCompletedTrades)
 
       setSelectedPlan(selectedPlanName)
       setDepositAmount(selectedAmountValue)
@@ -1238,9 +1250,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-3xl bg-gradient-to-br from-pink-500/20 to-pink-500/5 border border-pink-500/30 p-4 sm:p-5">
-                <p className="text-zinc-400 text-xs sm:text-sm">Trades/Day</p>
+                <p className="text-zinc-400 text-xs sm:text-sm">Trades</p>
                 <h3 className="mt-2 text-2xl sm:text-3xl font-black text-pink-400">
-                  {tradesPerDay}
+                  {tradesPerDay} / {completedTrades}
                 </h3>
               </div>
 
