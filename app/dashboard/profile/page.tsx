@@ -454,18 +454,40 @@ export default function DashboardProfilePage() {
         {/* Profile header */}
         <div className="mb-6">
           <div className="glass-panel p-6 rounded-3xl flex items-center gap-4">
-            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-400/8 flex items-center justify-center overflow-hidden border border-white/6">
-              {selfiePreview ? (
-                <img src={selfiePreview} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-2xl font-bold neon-text">{(userName || 'U').slice(0,1)}</div>
-              )}
-            </div>
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden border border-emerald-400/20"
+                style={{ boxShadow: "0 0 18px rgba(16,185,129,0.06)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {selfiePreview ? (
+                  <img src={selfiePreview} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
+                    <defs>
+                      <linearGradient id="avatarGrad" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#02120f" />
+                        <stop offset="60%" stopColor="#05221a" />
+                        <stop offset="100%" stopColor="#06302a" />
+                      </linearGradient>
+                      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+
+                    <g filter="url(#glow)">
+                      <circle cx="50" cy="50" r="46" fill="url(#avatarGrad)" stroke="#0f766e" strokeOpacity="0.18" strokeWidth="2" />
+                      <text x="50" y="50" textAnchor="middle" fontSize="46" fontWeight="700" fill="#D4AF37" dominantBaseline="middle" style={{ textShadow: '0 0 8px rgba(212,175,55,0.45)' }}>$</text>
+                    </g>
+                  </svg>
+                )}
+              </div>
             <div className="flex-1">
               <div className="text-sm text-zinc-400">Account</div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black">{userName}</h2>
-                <span className="text-zinc-400">•</span>
+              <div>
+                <h2 className="text-2xl font-black neon-text">{(firstName || lastName) ? `${firstName} ${lastName}`.trim() : email}</h2>
                 <div className="text-sm text-zinc-400">{email}</div>
               </div>
               <div className="text-xs text-zinc-400 mt-1">UID: {uniqueId}</div>
