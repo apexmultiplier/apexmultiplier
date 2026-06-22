@@ -1074,6 +1074,21 @@ export default function DashboardPage() {
                       </div>
 
                       <div>
+                        <p className="text-zinc-400 text-xs sm:text-sm">Total Profit Earned</p>
+                        {
+                          (() => {
+                            const hasCurrentProfit = Object.prototype.hasOwnProperty.call(plan, 'current_profit')
+                            const currentProfitVal = hasCurrentProfit ? Number(plan.current_profit || 0) : null
+                            const derived = Number(plan.dailyProfit || plan.daily_profit || 0) * Number(plan.daysElapsedForItem || 0)
+                            const totalProfitEarned = hasCurrentProfit ? currentProfitVal! : derived
+                            return (
+                              <h3 className="text-emerald-400 text-xl sm:text-2xl font-bold mt-2">${Number(totalProfitEarned || 0).toFixed(2)}</h3>
+                            )
+                          })()
+                        }
+                      </div>
+
+                      <div>
                         <p className="text-zinc-400 text-xs sm:text-sm">ROI</p>
                         <h3 className="text-xl sm:text-2xl font-bold mt-2">{Number(plan.planRoi || 0)}%</h3>
                       </div>
