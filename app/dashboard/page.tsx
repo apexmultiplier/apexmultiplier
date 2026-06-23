@@ -914,23 +914,22 @@ export default function DashboardPage() {
 
         {/* HEADER */}
 
-        <div className="flex flex-col lg:flex-row justify-between gap-4 sm:gap-5 items-start lg:items-center mb-6 sm:mb-8">
+        <div className="flex flex-row justify-between gap-2 sm:gap-5 items-center mb-3 sm:mb-8">
 
-          <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight">
-              APEX{" "}
-              <span className="text-emerald-400 drop-shadow-[0_0_15px_#10b981]">
-                MULTIPLIER
-              </span>
-            </h1>
-
-            <p className="text-zinc-400 mt-2 text-sm sm:text-base">
-              Premium AI Trading Dashboard
-            </p>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Apex Multiplier" className="hidden md:block h-12 w-12 rounded-full object-contain self-center" />
+              <img src="/logo.png" alt="Apex Multiplier" className="h-10 w-10 rounded-full object-contain md:hidden self-center" />
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-black leading-tight">
+                <span className="whitespace-nowrap">APEX</span>{' '}
+                <span className="block md:inline text-emerald-400 drop-shadow-[0_0_15px_#10b981]">MULTIPLIER</span>
+              </h1>
+            </div>
+            <p className="text-zinc-400 mt-2 text-sm sm:text-base">With Grow Your Financial Assets</p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 w-full lg:w-auto flex-wrap justify-end lg:justify-end self-end">
-            <div className="flex flex-col items-end gap-2 sm:gap-3">
+            <div className="flex flex-col items-end gap-1 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="relative">
                   <button
