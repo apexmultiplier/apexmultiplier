@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { usePlans } from "@/lib/plans"
 import { useEffect, useState } from "react"
 import { Sparkles, Award, ShieldCheck, Star, Crown } from "lucide-react"
+import { CANONICAL_PLANS } from "@/lib/planDefinitions"
 
 const planThemes = {
   Starter: {
@@ -58,13 +59,7 @@ const planThemes = {
   },
 }
 
-const canonicalFallback = [
-  { title: "Starter", price: "$500", amount: "500", roi: "8%", duration: "30 Days" },
-  { title: "Silver", price: "$1,000", amount: "1000", roi: "9%", duration: "30 Days" },
-  { title: "Premium", price: "$2,500", amount: "2500", roi: "10%", duration: "30 Days" },
-  { title: "Gold", price: "$5,000", amount: "5000", roi: "12%", duration: "30 Days" },
-  { title: "Elite Infinity", price: "$10,000", amount: "10000", roi: "14%", duration: "30 Days" },
-]
+const canonicalFallback = CANONICAL_PLANS.map((p) => ({ title: p.title, price: p.price, amount: p.amount, roi: `${p.roi}%`, duration: p.duration }))
 
 function PlanSelectCard({ plan, onSelect }: { plan: any; onSelect: (p: any) => void }) {
   const theme = planThemes[plan.title as keyof typeof planThemes] ?? planThemes.Premium

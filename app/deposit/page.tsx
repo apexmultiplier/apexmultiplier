@@ -20,13 +20,12 @@ const wallets = {
   },
 }
 
-const planDefaults: Record<string, string> = {
-  Starter: "500",
-  Silver: "1000",
-  Premium: "2500",
-  Gold: "5000",
-  "Elite Infinity": "10000",
-}
+import { CANONICAL_PLANS } from '@/lib/planDefinitions'
+
+const planDefaults: Record<string, string> = CANONICAL_PLANS.reduce((acc: Record<string,string>, p) => {
+  acc[p.title] = String(p.amount)
+  return acc
+}, {})
 
 function DepositView() {
   const router = useRouter()

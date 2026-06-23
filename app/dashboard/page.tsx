@@ -30,6 +30,7 @@ import {
   Clock3,
   User,
 } from "lucide-react"
+import { getPlanConfigFromNameOrAmount } from '@/lib/planDefinitions'
 
 import { Award, Sparkles, Star } from "lucide-react"
 
@@ -127,17 +128,7 @@ function planColorClass(planName: string) {
 }
 
 function planConfig(planName: string, amount: number) {
-  const key = (planName || "").toLowerCase()
-  if (key.includes("starter")) return { roi: 8, duration: 30 }
-  if (key.includes("silver")) return { roi: 9, duration: 30 }
-  if (key.includes("premium")) return { roi: 10, duration: 30 }
-  if (key.includes("gold")) return { roi: 12, duration: 30 }
-  if (key.includes("elite")) return { roi: 14, duration: 30 }
-  if (amount >= 10000) return { roi: 14, duration: 30 }
-  if (amount >= 5000) return { roi: 12, duration: 30 }
-  if (amount >= 2500) return { roi: 10, duration: 30 }
-  if (amount >= 1000) return { roi: 9, duration: 30 }
-  return { roi: 8, duration: 30 }
+  return getPlanConfigFromNameOrAmount(planName, amount)
 }
 
 function generateShortId(id: string) {

@@ -28,6 +28,7 @@ import {
   Briefcase,
 } from "lucide-react"
 import { PlanCard } from "./components/landing/PlanCard"
+import { CANONICAL_PLANS } from "@/lib/planDefinitions"
 import { InfoCard } from "./components/landing/InfoCard"
 import { ReviewCard } from "./components/landing/ReviewCard"
 
@@ -186,13 +187,7 @@ function FAQAccordion() {
 
 function AICalculator() {
   // Calculator must exactly match website plans — keep only allowed plans
-  const plans = [
-    { title: "Starter", amount: 500, roi: 8 },
-    { title: "Silver", amount: 1000, roi: 9 },
-    { title: "Premium", amount: 2500, roi: 10 },
-    { title: "Gold", amount: 5000, roi: 12 },
-    { title: "Elite Infinity", amount: 10000, roi: 14 },
-  ]
+  const plans = CANONICAL_PLANS.map((p) => ({ title: p.title, amount: Number(p.amount), roi: Number(p.roi) }))
 
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [amount, setAmount] = useState(plans[selectedIdx].amount)
@@ -204,27 +199,19 @@ function AICalculator() {
     setAmount(plans[selectedIdx].amount)
   }, [selectedIdx])
 
-  const finalAmount = useMemo(() => {
-    const principal = Number(amount) || 0
-    const monthlyRate = (plans[selectedIdx].roi || 0) / 100
-    return principal * Math.pow(1 + monthlyRate, months)
-  }, [amount, months, selectedIdx])
-
-  const profit = Math.max(0, finalAmount - (Number(amount) || 0))
-
-  // Monthly withdrawal scenario
-  const monthlyProfit = (Number(amount) || 0) * ((plans[selectedIdx].roi || 0) / 100)
-  const totalProfitCollected = monthlyProfit * months
-  const principalRemaining = Number(amount) || 0
-  const reinvestProfit = profit
-  const differenceEarned = reinvestProfit - totalProfitCollected
+  // Simple ROI calculations (no compounding, no reinvestment)
+  const principal = Number(amount) || 0
+  const monthlyRate = (plans[selectedIdx].roi || 0) / 100
+  const monthlyProfit = principal * monthlyRate
+  const totalProfit = monthlyProfit * months
+  const totalReturn = principal + totalProfit
 
   // animate profit display
   useEffect(() => {
     let raf = 0
     const start = performance.now()
     const from = displayProfit
-    const to = profit
+    const to = totalProfit
     const duration = 600
 
     function step(now: number) {
@@ -238,7 +225,7 @@ function AICalculator() {
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profit])
+  }, [totalProfit])
 
   // lock body scroll when modal is open
   useEffect(() => {
@@ -304,11 +291,11 @@ function AICalculator() {
             <div className="md:col-span-2 grid gap-4">
               <div className="rounded-[18px] p-4 bg-gradient-to-br from-white/[0.02] to-transparent border border-white/6 flex flex-col md:flex-row items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-400">Projected Final Amount</p>
-                  <p className="mt-2 text-2xl md:text-3xl font-black text-white">${finalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="text-sm text-zinc-400">Total Return</p>
+                  <p className="mt-2 text-2xl md:text-3xl font-black text-white">${totalReturn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
                 <div className="mt-4 md:mt-0 text-right">
-                  <p className="text-sm text-zinc-400">Estimated Profit</p>
+                  <p className="text-sm text-zinc-400">Total Profit</p>
                   <p className="mt-2 text-2xl md:text-3xl font-black text-[#00ffae]">${displayProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
               </div>
@@ -376,38 +363,21 @@ function AICalculator() {
 
               <div className="space-y-3">
                 <div className="rounded-[12px] p-3 bg-white/4 border border-white/6">
-                  <p className="text-sm text-zinc-400">REINVESTMENT SCENARIO</p>
-                  <p className="mt-2 text-xl md:text-2xl font-black text-[#00ffae] drop-shadow-[0_0_18px_rgba(0,255,174,0.16)]">${reinvestProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="text-sm text-zinc-400">PROJECTED EARNINGS</p>
+                  <p className="mt-2 text-xl md:text-2xl font-black text-[#00ffae] drop-shadow-[0_0_18px_rgba(0,255,174,0.16)]">${totalProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                   <p className="text-sm text-zinc-400">Projected Profit</p>
-                  <p className="mt-2 text-base md:text-lg font-bold text-white">Total Portfolio Value: ${finalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="mt-2 text-base md:text-lg font-bold text-white">Total Return: ${totalReturn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
 
                 <div className="rounded-[12px] p-3 bg-white/4 border border-white/6">
-                  <p className="text-sm text-zinc-400">MONTHLY WITHDRAWAL SCENARIO</p>
+                  <p className="text-sm text-zinc-400">PROFIT SUMMARY</p>
                   <p className="mt-2 text-xl md:text-2xl font-black text-white">Monthly Profit: ${monthlyProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  <p className="text-sm text-zinc-400 mt-1">Total Profit Collected: ${totalProfitCollected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  <p className="text-sm text-zinc-400 mt-1">Principal Remaining: ${principalRemaining.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="text-sm text-zinc-400 mt-1">Total Profit: ${totalProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <p className="text-sm text-zinc-400 mt-1">Principal Amount: ${principal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
               </div>
             </div>
-
-            <div className="mt-4 grid gap-4 lg:grid-cols-2 items-start">
-              <div className="rounded-[12px] p-3 bg-white/4 border border-white/6">
-                <p className="text-sm text-zinc-400">Option A</p>
-                <h4 className="mt-1 font-black text-white">Reinvest Profits</h4>
-                <p className="mt-1 text-base text-[#00ffae]">Projected Profit: ${reinvestProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-              </div>
-              <div className="rounded-[12px] p-3 bg-white/4 border border-white/6">
-                <p className="text-sm text-zinc-400">Option B</p>
-                <h4 className="mt-1 font-black text-white">Monthly Withdrawals</h4>
-                <p className="mt-1 text-base text-white">Total Profit Collected: ${totalProfitCollected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-3">
-              <div className="bg-[#052018] text-[#00ffae] px-3 py-1 rounded-full text-sm font-semibold">Potential Additional Growth</div>
-              <div className="text-sm text-zinc-400">Difference Earned: <span className="font-bold text-white ml-2">${differenceEarned.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div>
-            </div>
+            
 
             <div className="mt-3 text-zinc-300 text-sm">
               <p className="font-semibold">Important Notice</p>
@@ -454,13 +424,7 @@ export default function Page() {
 
   // Fallback plans shown when Supabase returns empty data or an error.
   // Keep UI/design identical by matching `PlanCard` props.
-  const defaultPlans = [
-    { title: "Starter", price: "$500", amount: "500", roi: "8% Monthly", duration: "30 Days", featured: false, vip: false },
-    { title: "Silver", price: "$1,000", amount: "1000", roi: "9% Monthly", duration: "30 Days", featured: true, vip: false },
-    { title: "Premium", price: "$2,500", amount: "2500", roi: "10% Monthly", duration: "30 Days", featured: false, vip: true },
-    { title: "Gold", price: "$5,000", amount: "5000", roi: "12% Monthly", duration: "30 Days", featured: false, vip: false },
-    { title: "Elite Infinity", price: "$10,000", amount: "10000", roi: "14% Monthly", duration: "30 Days", featured: true, vip: true },
-  ]
+  const defaultPlans = CANONICAL_PLANS.map((p) => ({ title: p.title, price: p.price, amount: p.amount, roi: p.roiLabel, duration: p.duration, featured: p.featured, vip: p.vip }))
 
   // Determine which plans to render: prefer DB plans, otherwise fallback.
   const displayPlans = (!plansLoading && (plans?.length || 0) === 0) ? defaultPlans : plans

@@ -42,7 +42,20 @@ function mapRowToPlan(p: any): Plan {
   }
 
   const price = typeof amountVal === 'number' ? `$${Number(amountVal).toLocaleString()}` : String(amountVal)
-  const roiVal = p.roi_percentage ?? p.roi_percent ?? p.roi ?? p.monthly_profit ?? null
+  const rawRoi = p.roi_percentage ?? p.roi_percent ?? p.roi ?? p.monthly_profit ?? null
+  let roiVal: any = null
+  if (rawRoi !== null && typeof rawRoi !== 'undefined') {
+    if (typeof rawRoi === 'number') roiVal = rawRoi
+    else if (typeof rawRoi === 'string') {
+      // if DB already stores a percentage label, keep it; otherwise parse number
+      roiVal = rawRoi.includes('%') || rawRoi.toLowerCase().includes('monthly') ? rawRoi : Number(rawRoi)
+    } else roiVal = rawRoi
+  }
+
+  // Enforce canonical ROI for Elite Infinity to avoid DB inconsistencies
+  if (String(title).toLowerCase().includes('elite infinity')) {
+    roiVal = 14
+  }
   const durationVal = p.duration_days ?? p.duration ?? null
   const featuresVal = p.features ?? p.tags ?? ''
   return {
@@ -50,7 +63,7 @@ function mapRowToPlan(p: any): Plan {
     title,
     price,
     amount: String(amountVal || ''),
-    roi: roiVal ? `${roiVal}% Monthly` : '',
+    roi: roiVal ? (typeof roiVal === 'number' ? `${roiVal}% Monthly` : String(roiVal)) : '',
     duration: durationVal ? `${durationVal} Days` : '',
     featured: String(featuresVal).toLowerCase().includes('featured'),
     vip: String(featuresVal).toLowerCase().includes('vip'),
