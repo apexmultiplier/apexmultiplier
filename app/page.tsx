@@ -797,7 +797,7 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="relative z-10 px-6 pb-28" id="features">
+      <section className="relative z-10 px-6 pb-28">
         <div className="max-w-7xl mx-auto grid gap-5 grid-cols-2 md:grid-cols-2 xl:grid-cols-6">
           {stats.map((item, index) => (
             <motion.div
@@ -849,23 +849,28 @@ export default function Page() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {aboutCards.map((card) => (
-            <InfoCard
-              key={card.title}
-              icon={card.icon}
-              title={card.title}
-              description={card.description}
-              decoration={
-                card.title === "ABOUT APEX MULTIPLIER"
-                  ? growthDecoration
-                  : card.title === "OUR MISSION"
-                  ? missionDecoration
-                  : card.title === "OUR VISION"
-                  ? visionDecoration
-                  : null
-              }
-            />
-          ))}
+          {aboutCards.map((card) => {
+            const id = card.title === "OUR MISSION" ? "mission" : card.title === "OUR VISION" ? "vision" : undefined
+            return (
+              <div key={card.title}>
+                {id ? <div id={id} className="pt-24 -mt-24" /> : null}
+                <InfoCard
+                  icon={card.icon}
+                  title={card.title}
+                  description={card.description}
+                  decoration={
+                    card.title === "ABOUT APEX MULTIPLIER"
+                      ? growthDecoration
+                      : card.title === "OUR MISSION"
+                      ? missionDecoration
+                      : card.title === "OUR VISION"
+                      ? visionDecoration
+                      : null
+                  }
+                />
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -944,8 +949,7 @@ export default function Page() {
         </div>
       </section>
 
-      <div id="mission" className="absolute -top-24" />
-      <div id="vision" className="absolute -top-24" />
+      
 
       <section className="relative z-10 px-6 pb-28" id="reviews">
         <div className="max-w-7xl mx-auto text-center mb-12">

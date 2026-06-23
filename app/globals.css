@@ -32,6 +32,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Offset anchors so fixed/sticky header doesn't cover target headings */
+:root {
+  --nav-scroll-offset: 5.5rem; /* roughly matches header height + gap */
+}
+
+/* Apply offset when scrolling to any element by id (anchor targets) */
+[id] {
+  scroll-margin-top: var(--nav-scroll-offset);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
