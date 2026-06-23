@@ -29,6 +29,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#030303" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="icon" href="/logo.png" />
       </head>
       <body className="min-h-full flex flex-col bg-[#030303] text-white">
         <PlansProvider>

@@ -74,13 +74,18 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md rounded-3xl glass-panel p-8">
 
-        <h1 className="text-4xl font-black text-center fin-heading neon-text">
-          APEX MULTIPLIER
-        </h1>
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+              <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
+            </div>
+            <h1 className="text-4xl font-black fin-heading neon-text">Apex Multiplier</h1>
+          </div>
 
-        <p className="text-zinc-400 text-center mt-3">
-          Welcome back to Apex Multiplier
-        </p>
+          <p className="text-zinc-400 text-center mt-3">
+            Welcome back to Apex Multiplier
+          </p>
+        </div>
 
         <div className="mt-8 space-y-5">
 

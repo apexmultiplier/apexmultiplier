@@ -177,8 +177,15 @@ export default function SignupClient() {
     <div className="min-h-screen bg-[#020406] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-[30px] p-8 shadow-[0_0_70px_rgba(0,255,174,0.12)]">
         <div className="mb-8 text-center">
-          <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/70">Premium Investment Access</p>
-          <h1 className="mt-4 text-4xl font-black tracking-[-0.03em]">Create your account</h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+              <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-[0.35em] text-[#00ffae]/70">Premium Investment Access</p>
+              <h1 className="mt-1 text-2xl font-black tracking-[-0.03em]">Apex<br/>Multiplier</h1>
+            </div>
+          </div>
           <p className="mt-3 text-zinc-400">Sign up and continue to your secure deposit portal.</p>
         </div>
 

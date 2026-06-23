@@ -589,8 +589,8 @@ export default function Page() {
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent pointer-events-none" />
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-[#0a0f1c]/80 border border-[#00ffae]/20 shadow-[0_0_18px_rgba(0,255,174,0.18)]">
-                  <img src="/logo.png" alt="Apex Multiplier" className="max-h-7 md:max-h-9 max-w-full object-contain" />
+                <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+                  <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-zinc-400">Apex</p>

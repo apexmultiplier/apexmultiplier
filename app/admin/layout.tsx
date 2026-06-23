@@ -145,8 +145,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside className={`fixed inset-y-0 left-0 z-40 w-72 transform bg-white/5 border-r border-white/6 backdrop-blur-3xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full' } overflow-y-auto`}>
           <div className="h-full flex flex-col p-6 gap-6">
             <div className="flex items-center gap-3">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-[#0a0f1c]/80 border border-[#00ffae]/20 shadow-[0_0_18px_rgba(0,255,174,0.18)]">
-                <img src="/logo.png" alt="logo" className="max-h-9 object-contain" />
+                <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+                <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-zinc-400">Admin</p>
@@ -179,6 +179,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <button aria-label="menu" onClick={() => setOpen(!open)} className="p-2 rounded-md bg-white/3 hover:bg-white/6 lg:p-2">
                     <Menu className="w-5 h-5 text-white" />
                   </button>
+                  <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+                    <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
+                  </div>
                   <div className="min-w-0">
                     <p className="text-xs text-zinc-400 whitespace-nowrap">Admin Panel</p>
                     <p className="font-black text-lg whitespace-nowrap">Overview</p>

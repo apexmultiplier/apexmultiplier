@@ -78,14 +78,12 @@ export default function AuthPage() {
 
         <div className="flex flex-col items-center mb-8">
 
-          <div className="w-20 h-20 rounded-3xl bg-[#00FFB2]/10 border border-[#00FFB2]/30 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,178,0.4)]">
-            <span className="text-4xl font-black text-[#00FFB2]">
-              A
-            </span>
+          <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
+            <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
           </div>
 
           <h1 className="text-3xl font-black mt-5 tracking-wide">
-            APEX MULTIPLIER
+            Apex Multiplier
           </h1>
 
           <p className="text-white/50 mt-2 text-center">
