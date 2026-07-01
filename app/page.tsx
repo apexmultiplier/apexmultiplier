@@ -531,15 +531,25 @@ export default function Page() {
     <>
       <style dangerouslySetInnerHTML={{__html: `
         @media (min-width: 1024px) {
+          .hero-title-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+          }
+
+          .hero-title {
+            max-width: 100% !important;
+          }
+
           .hero-title-sub {
-            font-size: clamp(3.5rem, 4.2vw, 4rem) !important;
+            font-size: clamp(3rem, 4.2vw, 4rem) !important;
             line-height: 0.82 !important;
             letter-spacing: -0.02em !important;
             white-space: nowrap !important;
-            max-width: 100% !important;
+            max-width: 95% !important;
             overflow: visible !important;
             width: auto !important;
-            display: inline-block !important;
+            display: block !important;
             text-wrap: nowrap !important;
             min-width: 0 !important;
           }
@@ -718,9 +728,9 @@ export default function Page() {
       )}
 
       <section className="hero-section relative z-10 px-6 pt-20 pb-28">
-        <div className="max-w-none md:max-w-7xl mx-auto grid gap-16 lg:grid-cols-2 items-center">
+        <div className="max-w-none md:max-w-7xl mx-auto grid gap-16 lg:grid-cols-[minmax(0,1fr)_28rem] xl:grid-cols-[minmax(0,1fr)_32rem] items-center">
           <motion.div
-            className="w-full"
+            className="w-full min-w-0"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -728,7 +738,7 @@ export default function Page() {
             <p className="hero-subtitle text-sm uppercase tracking-[0.35em] text-[#00ffae]/80 mb-6">
               ADVANCED AI TRADING INFRASTRUCTURE
             </p>
-            <h1 className="hero-title-wrap font-black uppercase tracking-[-0.04em] flex flex-col items-start w-full max-w-full">
+            <h1 className="hero-title-wrap font-black uppercase tracking-[-0.04em] flex flex-col items-start w-full max-w-full min-w-0">
 
               <span
                 className="
