@@ -113,28 +113,60 @@ const aboutCards = [
 
 const reviews = [
   {
-    name: "Ahmed Raza",
-    location: "Dubai, UAE",
-    flag: "🇦🇪",
-    text: "Apex Multiplier transformed my portfolio with intelligent trading and premium execution.",
-  },
-  {
     name: "Rahul Sharma",
     location: "Mumbai, India",
     flag: "🇮🇳",
-    text: "The AI signals are precise and the dashboard feels like a futuristic trading cockpit.",
+    avatar: "https://i.pravatar.cc/100?img=12",
+    text: "Apex Multiplier has been one of the easiest investment platforms I’ve used. The dashboard feels clean, deposits are straightforward, and withdrawals have always been processed without unnecessary delays. I also appreciated how quickly support responded when I had a question.",
   },
   {
-    name: "James Wilson",
-    location: "London, UK",
-    flag: "🇬🇧",
-    text: "Elite-grade investment tools with a cyber-finance aesthetic that inspires confidence.",
+    name: "Lukas Schneider",
+    location: "Berlin, Germany",
+    flag: "🇩🇪",
+    avatar: "https://i.pravatar.cc/100?img=32",
+    text: "I like how transparent the platform feels. The verification process was smooth, the interface is simple, and I never felt confused about where my money was going. It has been a stable experience for long-term investing.",
   },
   {
-    name: "Wei Ling",
-    location: "Singapore",
-    flag: "🇸🇬",
-    text: "The platform is secure, fast, and visually premium — exactly what modern investors want.",
+    name: "Mehmet Kaya",
+    location: "Istanbul, Turkey",
+    flag: "🇹🇷",
+    avatar: "https://i.pravatar.cc/100?img=15",
+    text: "The email approval and KYC process were easier than I expected. Once everything was set up, I found the platform very easy to navigate and the deposit flow was straightforward. It felt professional from the start.",
+  },
+  {
+    name: "Ahmed Raza",
+    location: "Karachi, Pakistan",
+    flag: "🇵🇰",
+    avatar: "https://i.pravatar.cc/100?img=18",
+    text: "I was looking for something reliable and simple, and Apex Multiplier delivered that. The dashboard is well organized, the support team is responsive, and the overall experience feels secure and dependable for regular investing.",
+  },
+  {
+    name: "Lucas Oliveira",
+    location: "São Paulo, Brazil",
+    flag: "🇧🇷",
+    avatar: "https://i.pravatar.cc/100?img=20",
+    text: "What impressed me most was how easy the platform is to use. I could understand my options quickly, make deposits without confusion, and monitor my progress clearly. It has been a calm and reliable experience.",
+  },
+  {
+    name: "Michael Carter",
+    location: "Austin, United States",
+    flag: "🇺🇸",
+    avatar: "https://i.pravatar.cc/100?img=9",
+    text: "I appreciate the professionalism and clarity of the platform. The onboarding was smooth, the customer support team was helpful, and the interface made it easy to stay updated on my portfolio without unnecessary complexity.",
+  },
+  {
+    name: "Ivan Petrov",
+    location: "Moscow, Russia",
+    flag: "🇷🇺",
+    avatar: "https://i.pravatar.cc/100?img=11",
+    text: "Apex Multiplier has been a practical choice for me because the process feels organized and trustworthy. Withdrawals have been smooth, the platform is easy to follow, and I value the calm, consistent experience it provides.",
+  },
+  {
+    name: "Omar Al Mansoori",
+    location: "Dubai, United Arab Emirates",
+    flag: "🇦🇪",
+    avatar: "https://i.pravatar.cc/100?img=24",
+    text: "I was impressed by how professional the whole experience felt. The platform is intuitive, the verification steps were clear, and the support team handled my questions with patience and understanding. It has been a solid platform for long-term investing.",
   },
 ]
 
@@ -1011,41 +1043,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Live Activity Feed */}
-      <section className="relative z-10 px-6 pb-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="col-span-1 md:col-span-1 relative rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_0_60px_rgba(16,185,129,0.04)] backdrop-blur-2xl">
-            <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Live Activity</p>
-            <h3 className="mt-3 text-xl font-black text-white">Recent Platform Activity</h3>
-            <div className="mt-4 h-20 flex items-center">
-              <motion.div key={feedIndex} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }} className="text-zinc-300">
-                ✓ {activityFeed[feedIndex]}
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Trust & Security */}
-          <div className="col-span-1 md:col-span-1 rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_0_60px_rgba(16,185,129,0.04)] backdrop-blur-2xl">
-            <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">Trust & Security</p>
-            <h3 className="mt-3 text-xl font-black text-white">Enterprise-Grade Protection</h3>
-            <ul className="mt-4 grid gap-3 text-zinc-300">
-              <li className="flex items-center gap-3"><ShieldCheck className="w-5 h-5 text-[#00ffae]" /> Advanced AI Infrastructure</li>
-              <li className="flex items-center gap-3"><Wallet className="w-5 h-5 text-[#00ffae]" /> Secure Transactions</li>
-              <li className="flex items-center gap-3"><Cpu className="w-5 h-5 text-[#00ffae]" /> 24/7 Platform Monitoring</li>
-              <li className="flex items-center gap-3"><Globe className="w-5 h-5 text-[#00ffae]" /> Global Accessibility</li>
-              <li className="flex items-center gap-3"><Users className="w-5 h-5 text-[#00ffae]" /> Professional Risk Management</li>
-              <li className="flex items-center gap-3"><BarChart3 className="w-5 h-5 text-[#00ffae]" /> Investor Data Protection</li>
-            </ul>
-          </div>
-
-          {/* FAQ Accordion */}
-          <div className="col-span-1 md:col-span-1 rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_0_60px_rgba(16,185,129,0.04)] backdrop-blur-2xl">
-            <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80">FAQ</p>
-            <h3 className="mt-3 text-xl font-black text-white">Common Questions</h3>
-            <FAQAccordion />
-          </div>
-        </div>
-      </section>
 
       {/* Global Presence & CTA */}
       <section className="relative z-10 px-6 pb-12">

@@ -8,9 +8,10 @@ interface ReviewCardProps {
   location: string
   flag: string
   text: string
+  avatar?: string
 }
 
-export function ReviewCard({ name, location, flag, text }: ReviewCardProps) {
+export function ReviewCard({ name, location, flag, text, avatar }: ReviewCardProps) {
   return (
     <motion.div
       whileHover={{ y: -10 }}
@@ -21,12 +22,20 @@ export function ReviewCard({ name, location, flag, text }: ReviewCardProps) {
       <div className="relative z-10 flex flex-col h-full">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl md:rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-lg font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.20)]">
-              {name
-                .split(" ")
-                .map((part) => part[0])
-                .join("")}
-            </div>
+            {avatar ? (
+              <img
+                src={avatar}
+                alt={name}
+                className="h-12 w-12 md:h-14 md:w-14 rounded-2xl md:rounded-3xl object-cover border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.20)]"
+              />
+            ) : (
+              <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl md:rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-lg font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.20)]">
+                {name
+                  .split(" ")
+                  .map((part) => part[0])
+                  .join("")}
+              </div>
+            )}
             <div>
               <p className="font-semibold text-white">{name}</p>
               <p className="text-sm text-zinc-500">{location} {flag}</p>
