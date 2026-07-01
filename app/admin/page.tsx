@@ -69,6 +69,10 @@ export default function AdminPage() {
         .channel("public:withdrawals")
         .on("postgres_changes", { event: "*", schema: "public", table: "withdrawals" }, () => loadAdminData())
         .subscribe(),
+      supabase
+        .channel("public:kyc_requests")
+        .on("postgres_changes", { event: "*", schema: "public", table: "kyc_requests" }, () => loadAdminData())
+        .subscribe(),
     ]
 
     return () => {
@@ -197,21 +201,25 @@ export default function AdminPage() {
   const loadAdminData = async () => {
     setLoading(true)
 
-    const [usersRes, depositsRes, withdrawalsRes] = await Promise.all([
+    const [usersRes, depositsRes, withdrawalsRes, kycRes] = await Promise.all([
       supabase.from("users").select("id,email,kyc_status,created_at,balance,full_name"),
       supabase.from("deposits").select("*").order("created_at", { ascending: false }),
       supabase.from("withdrawals").select("*").order("created_at", { ascending: false }),
+      supabase.from("kyc_requests").select("*").order("created_at", { ascending: false }),
     ])
 
     const userList = usersRes.data || []
     const depositList = (depositsRes.data || []).map((d: any) => ({ ...d, amount: Number(d.amount || 0) }))
     const withdrawalList = (withdrawalsRes.data || []).map((w: any) => ({ ...w, amount: Number(w.amount || 0) }))
+    const kycList = (kycRes.data || []).map((row: any) => ({
+      ...row,
+      status: String(row?.status || row?.kyc_status || '').trim().toLowerCase(),
+    }))
 
     setTotalUsers(userList.length)
     setTotalDeposits(depositList.reduce((s: number, it: any) => s + Number(it.amount || 0), 0))
     setTotalWithdrawals(withdrawalList.reduce((s: number, it: any) => s + Number(it.amount || 0), 0))
 
-    const kycList = userList.filter((u: any) => u.govt_id_number || u.kyc_status)
     setTotalKyc(kycList.length)
 
     // pending email verifications
@@ -226,9 +234,9 @@ export default function AdminPage() {
       setPendingEmailVerifications(0)
     }
 
-    const pending = userList.filter((u: any) => String(u.kyc_status || '').toLowerCase() === 'pending')
+    const pending = kycList.filter((request: any) => request.status === 'pending')
     console.log('Pending KYC Records', pending)
-    console.log('Users source sample', userList.slice(0, 10))
+    console.log('KYC requests source sample', kycList.slice(0, 10))
     setPendingKyc(pending.slice(0, 5))
 
     setDeposits(depositList.slice(0, 8))

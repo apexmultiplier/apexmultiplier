@@ -172,10 +172,27 @@ body {
 
 /* Mobile-specific overrides: only apply when viewport <= 768px. Preserve desktop unchanged. */
 @media (max-width: 768px) {
+  .hero-title {
+    font-size: clamp(92px, 24vw, 110px) !important;
+    line-height: 0.82 !important;
+    letter-spacing: -0.04em !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .hero-title-sub {
+    font-size: clamp(58px, 14vw, 72px) !important;
+    line-height: 0.82 !important;
+    letter-spacing: -0.04em !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
   body { overflow-x: hidden; }
 
   /* Reduce global typography on mobile */
-  h1 { font-size: 2.25rem; line-height: 1.02; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.125rem; }
   p, li, span { font-size: 0.95rem; }

@@ -24,11 +24,39 @@ interface KycRecord {
   updated_at?: string | null
 }
 
+const normalizeKycStatus = (value?: string) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (normalized === 'approved') return 'approved'
+  if (normalized === 'rejected') return 'rejected'
+  if (normalized === 'resubmission_requested' || normalized === 'resubmission requested' || normalized === 'resubmission') return 'resubmission_requested'
+  return 'pending'
+}
+
+const normalizeKycRecord = (row: any): KycRecord => ({
+  id: row?.id,
+  user_id: row?.user_id ?? row?.userId ?? undefined,
+  email: row?.email ?? row?.userEmail ?? row?.user_email ?? '',
+  full_name: row?.full_name ?? row?.userName ?? row?.name ?? row?.user_name ?? '',
+  unique_id: row?.unique_id ?? row?.uid ?? row?.user_id ?? '',
+  govt_id_name: row?.govt_id_name ?? row?.idType ?? row?.document_type ?? undefined,
+  govt_id_number: row?.govt_id_number ?? row?.government_id_number ?? row?.idNumber ?? row?.govtIdNumber ?? undefined,
+  government_id_number: row?.government_id_number ?? row?.govt_id_number ?? row?.idNumber ?? row?.govtIdNumber ?? undefined,
+  document_url: row?.document_url ?? row?.documentUrl ?? row?.document ?? undefined,
+  document_type: row?.document_type ?? row?.govt_id_name ?? row?.idType ?? undefined,
+  document_front: row?.document_front ?? row?.documentFront ?? row?.front_document ?? row?.document_url ?? undefined,
+  document_back: row?.document_back ?? row?.documentBack ?? row?.back_document ?? undefined,
+  country: row?.country ?? row?.country_of_residence ?? row?.userCountry ?? '',
+  status: normalizeKycStatus(row?.status ?? row?.kyc_status ?? row?.verification_status),
+  created_at: row?.created_at ?? row?.createdAt ?? new Date().toISOString(),
+  updated_at: row?.updated_at ?? row?.updatedAt ?? row?.created_at ?? row?.createdAt ?? null,
+})
+
 export default function KycPage() {
   const router = useRouter()
   const [kycRequests, setKycRequests] = useState<KycRecord[]>([])
   const [pendingRequests, setPendingRequests] = useState<KycRecord[]>([])
   const [approvedRequests, setApprovedRequests] = useState<KycRecord[]>([])
+  const [rejectedRequests, setRejectedRequests] = useState<KycRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<number | string | null>(null)
 
@@ -51,19 +79,24 @@ export default function KycPage() {
   const loadKyc = async () => {
     setLoading(true)
     try {
-      const [{ data: pending }, { data: approved }] = await Promise.all([
-        supabase.from("kyc_requests").select("*").eq('status', 'pending').order("created_at", { ascending: false }),
-        supabase.from("kyc_requests").select("*").eq('status', 'approved').order("updated_at", { ascending: false }),
-      ])
+      const { data, error } = await supabase
+        .from("kyc_requests")
+        .select("*")
+        .order("created_at", { ascending: false })
 
-      setPendingRequests(pending || [])
-      setApprovedRequests(approved || [])
-      // keep full list for backward compatibility where used
-      setKycRequests([...(pending || []), ...(approved || [])])
+      if (error) throw error
+
+      const normalizedRequests = (data || []).map((row: any) => normalizeKycRecord(row))
+      setKycRequests(normalizedRequests)
+      setPendingRequests(normalizedRequests.filter((request) => request.status === 'pending'))
+      setApprovedRequests(normalizedRequests.filter((request) => request.status === 'approved'))
+      setRejectedRequests(normalizedRequests.filter((request) => request.status === 'rejected'))
     } catch (e) {
       console.warn('loadKyc error', e)
+      setKycRequests([])
       setPendingRequests([])
       setApprovedRequests([])
+      setRejectedRequests([])
     } finally {
       setLoading(false)
     }
@@ -89,10 +122,23 @@ export default function KycPage() {
         return
       }
 
+      const nextStatus = normalizeKycStatus(statusStored)
+      const nextUpdatedAt = new Date().toISOString()
+      const updatedRecord = normalizeKycRecord({ ...reqData, status: nextStatus, updated_at: nextUpdatedAt })
+
+      setKycRequests((prev) => {
+        const withoutUpdated = prev.filter((request) => String(request.id) !== String(id))
+        const nextRequests = [updatedRecord, ...withoutUpdated]
+        setPendingRequests(nextRequests.filter((request) => request.status === 'pending'))
+        setApprovedRequests(nextRequests.filter((request) => request.status === 'approved'))
+        setRejectedRequests(nextRequests.filter((request) => request.status === 'rejected'))
+        return nextRequests
+      })
+
       // also update users table kyc_status for the user
       const userId = reqData.user_id
-      const payload: any = { kyc_status: String(status).charAt(0).toUpperCase() + String(status).slice(1) }
-      if (String(status).toLowerCase() === 'approved') payload.kyc_verified_at = new Date().toISOString()
+      const payload: any = { kyc_status: nextStatus }
+      if (nextStatus === 'approved') payload.kyc_verified_at = nextUpdatedAt
       else payload.kyc_verified_at = null
 
       const { error: uErr } = await supabase.from('users').update(payload).eq('id', userId)
@@ -143,7 +189,7 @@ export default function KycPage() {
     }
 
     // refresh list and finish
-    loadKyc()
+    await loadKyc()
     setUpdatingId(null)
   }
 

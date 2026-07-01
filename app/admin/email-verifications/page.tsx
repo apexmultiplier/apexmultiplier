@@ -10,6 +10,29 @@ export default function AdminEmailVerificationsPage() {
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+  const normalizeStatus = (value: string) => {
+    const status = String(value || '').toLowerCase()
+    if (status === 'approved' || status === 'verified') return 'approved'
+    if (status === 'rejected') return 'rejected'
+    return 'pending'
+  }
+
+  const applyStatusToLocalState = (id: number, status: string, verifiedBy?: string) => {
+    const nextStatus = normalizeStatus(status)
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id
+          ? {
+              ...req,
+              status: nextStatus,
+              verified_at: nextStatus === 'approved' ? new Date().toISOString() : req.verified_at,
+              verified_by: nextStatus === 'approved' ? verifiedBy || req.verified_by : req.verified_by,
+            }
+          : req
+      )
+    )
+  }
+
   useEffect(() => {
     checkAdminSession()
   }, [])
@@ -46,90 +69,37 @@ export default function AdminEmailVerificationsPage() {
   const approve = async (id: number) => {
     try {
       const { data: sessionData } = await supabase.auth.getSession()
-      const adminEmail = sessionData?.session?.user?.email || "admin"
+      const adminEmail = sessionData?.session?.user?.email || 'admin'
 
-      console.log("Request ID:", id)
-      const payload = { status: "approved", verified_at: new Date().toISOString(), verified_by: adminEmail }
-      console.log("Update payload:", payload)
+      const res = await fetch('/api/admin/email-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id, status: 'approved', adminEmail }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error || 'Server update failed')
 
-      const { data: upData, error: upErr } = await supabase
-        .from("email_verification_requests")
-        .update(payload)
-        .eq("id", id)
-
-      console.log("Update Data:", upData)
-      console.log("Update Error:", upErr)
-
-      if (upErr) {
-        console.warn("Direct update blocked, attempting server-side update via admin API", upErr)
-        // fallback to server API route which uses service role
-        try {
-          const url = '/api/admin/email-verification'
-          console.log('API URL:', url)
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestId: id, status: 'approved', adminEmail }),
-          })
-          const json = await res.json()
-          console.log('Server update response:', json)
-          if (!res.ok) throw new Error(json?.error || 'Server update failed')
-        } catch (e) {
-          console.error('Server-side update failed', e)
-          alert('Unable to approve request')
-          return
-        }
-      }
-
-      // also update users table for quick lookup
-      const { data: req } = await supabase.from("email_verification_requests").select("*").eq("id", id).single()
-      if (req && req.email) {
-        await supabase.from("users").upsert({ email: req.email, email_verification_status: "verified", email_verified_at: new Date().toISOString(), email_verified_by: adminEmail }, { onConflict: "email" })
-      }
-
-      loadRequests()
+      applyStatusToLocalState(id, json?.status || 'approved', adminEmail)
+      await loadRequests()
       alert('Email verification approved')
     } catch (e) {
       console.error(e)
-      alert("Unable to approve request")
+      alert('Unable to approve request')
     }
   }
 
   const reject = async (id: number) => {
     try {
-      console.log('Request ID:', id)
-      const payload = { status: 'rejected' }
-      console.log('Update payload:', payload)
+      const res = await fetch('/api/admin/email-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id, status: 'rejected' }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error || 'Server update failed')
 
-      const { data: upData, error: upErr } = await supabase
-        .from('email_verification_requests')
-        .update(payload)
-        .eq('id', id)
-
-      console.log('Update Data:', upData)
-      console.log('Update Error:', upErr)
-
-      if (upErr) {
-        console.warn('Direct update blocked, attempting server-side update via admin API', upErr)
-        try {
-          const url = '/api/admin/email-verification'
-          console.log('API URL:', url)
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestId: id, status: 'rejected' }),
-          })
-          const json = await res.json()
-          console.log('Server update response:', json)
-          if (!res.ok) throw new Error(json?.error || 'Server update failed')
-        } catch (e) {
-          console.error('Server-side update failed', e)
-          alert('Unable to reject request')
-          return
-        }
-      }
-
-      loadRequests()
+      applyStatusToLocalState(id, json?.status || 'rejected')
+      await loadRequests()
       alert('Email verification rejected')
     } catch (e) {
       console.error(e)
@@ -174,16 +144,16 @@ export default function AdminEmailVerificationsPage() {
                     <td className="p-3 break-words">{r.email}</td>
                     <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${r.status === 'verified' ? 'bg-emerald-500/15 text-emerald-300' : r.status === 'pending' ? 'bg-amber-500/15 text-amber-300' : 'bg-red-500/15 text-red-300'}`}>
-                        {r.status}
+                      <span className={`px-2 py-1 rounded-full text-xs ${normalizeStatus(r.status) === 'approved' ? 'bg-emerald-500/15 text-emerald-300' : normalizeStatus(r.status) === 'rejected' ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>
+                        {normalizeStatus(r.status)}
                       </span>
                     </td>
                     <td className="p-3">
                       <div className="flex gap-2">
-                        {r.status !== 'verified' ? (
+                        {normalizeStatus(r.status) !== 'approved' ? (
                           <button onClick={() => approve(r.id)} className="px-3 py-2 rounded-md bg-emerald-500 text-black font-semibold">Approve</button>
                         ) : null}
-                        {r.status !== 'rejected' ? (
+                        {normalizeStatus(r.status) !== 'rejected' && normalizeStatus(r.status) !== 'approved' ? (
                           <button onClick={() => reject(r.id)} className="px-3 py-2 rounded-md bg-red-500 text-black font-semibold">Reject</button>
                         ) : null}
                       </div>

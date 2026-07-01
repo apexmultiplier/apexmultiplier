@@ -528,7 +528,98 @@ export default function Page() {
     </motion.div>
   )
   return (
-    <main className="min-h-screen overflow-hidden bg-[#020406] text-white relative">
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (min-width: 1024px) {
+          .hero-title-sub {
+            font-size: clamp(3.5rem, 4.2vw, 4rem) !important;
+            line-height: 0.82 !important;
+            letter-spacing: -0.02em !important;
+            white-space: nowrap !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            width: auto !important;
+            display: inline-block !important;
+            text-wrap: nowrap !important;
+            min-width: 0 !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .hero-title {
+            font-size: clamp(76px, 20vw, 92px) !important;
+            line-height: 0.82 !important;
+            letter-spacing: -0.04em !important;
+            white-space: normal !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            width: 100% !important;
+            display: block !important;
+          }
+
+          .hero-title-sub {
+            font-size: clamp(30px, 8vw, 42px) !important;
+            line-height: 0.82 !important;
+            letter-spacing: -0.02em !important;
+            white-space: nowrap !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            width: auto !important;
+            display: inline-block !important;
+            text-wrap: nowrap !important;
+            min-width: 0 !important;
+          }
+
+          .hero-subtitle {
+            font-size: 0.8rem !important;
+            letter-spacing: 0.16em !important;
+            margin-bottom: 0.75rem !important;
+          }
+
+          .hero-title-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          .hero-section {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 3rem !important;
+            padding-bottom: 2rem !important;
+          }
+
+          .hero-portfolio-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 1rem !important;
+          }
+
+          .hero-portfolio-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.75rem !important;
+          }
+
+          .hero-portfolio-grid > div {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          .hero-portfolio-grid .rounded-xl {
+            padding: 0.85rem !important;
+            height: auto !important;
+            min-height: 0 !important;
+          }
+
+          .hero-portfolio-grid .max-w-xs {
+            max-width: 100% !important;
+          }
+
+          main, header, section, footer {
+            overflow-x: hidden !important;
+          }
+        }
+      `}} />
+      <main className="min-h-screen overflow-visible md:overflow-hidden bg-[#020406] text-white relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,255,174,0.15),transparent_40%)]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#00ffae]/10 blur-[140px]" />
       <div className="absolute top-40 left-20 w-72 h-72 rounded-full bg-[#00e5ff]/10 blur-[120px]" />
@@ -626,23 +717,59 @@ export default function Page() {
         </div>
       )}
 
-      <section className="relative z-10 px-6 pt-20 pb-28">
-        <div className="max-w-7xl mx-auto grid gap-16 lg:grid-cols-2 items-center">
+      <section className="hero-section relative z-10 px-6 pt-20 pb-28">
+        <div className="max-w-none md:max-w-7xl mx-auto grid gap-16 lg:grid-cols-2 items-center">
           <motion.div
+            className="w-full"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="text-sm uppercase tracking-[0.35em] text-[#00ffae]/80 mb-6">
+            <p className="hero-subtitle text-sm uppercase tracking-[0.35em] text-[#00ffae]/80 mb-6">
               ADVANCED AI TRADING INFRASTRUCTURE
             </p>
-            <h1 className="text-4xl sm:text-6xl md:text-5xl lg:text-7xl font-black uppercase leading-tight md:leading-[0.92] tracking-[-0.04em] text-white">
-              FUTURE OF
-              <span className="block text-[#00ffae] drop-shadow-[0_0_25px_rgba(0,255,174,0.45)]">
-                SMART INVESTING
+            <h1 className="hero-title-wrap font-black uppercase tracking-[-0.04em] flex flex-col items-start w-full max-w-full">
+
+              <span
+                className="
+                hero-title
+                block
+                text-white
+                font-black
+                sm:text-[22vw]
+                md:text-6xl
+                lg:text-8xl
+                xl:text-9xl
+                leading-[0.82]
+                max-w-full
+                tracking-[-0.04em]
+                "
+              >
+                FUTURE
               </span>
+
+              <span
+                className="
+                hero-title-sub
+                mt-1
+                block
+                text-[#00ffae]
+                font-black
+                drop-shadow-[0_0_25px_rgba(0,255,174,0.45)]
+                sm:text-[14vw]
+                md:text-5xl
+                lg:text-7xl
+                xl:text-8xl
+                leading-[0.82]
+                max-w-full
+                whitespace-nowrap
+                "
+              >
+                OF SMART INVESTING
+              </span>
+
             </h1>
-            <p className="mt-6 max-w-xl text-zinc-400 leading-7 text-sm md:text-lg">
+            <p className="mt-4 md:mt-6 max-w-xl text-zinc-400 leading-7 text-sm md:text-lg">
               Every great financial journey begins with a single decision. Join thousands of forward-thinking individuals leveraging AI-powered investment solutions to build long-term wealth, create new income opportunities, and move closer to the financial freedom they deserve.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
@@ -669,7 +796,7 @@ export default function Page() {
             transition={{ duration: 0.8 }}
           >
             <div
-              className="relative rounded-[32px] border border-[rgba(0,255,174,0.12)] bg-[radial-gradient(circle_at_center,rgba(0,255,170,0.12)_0%,rgba(0,255,170,0.04)_40%,transparent_75%),rgba(16,45,40,0.55)] backdrop-blur-xl overflow-hidden p-6"
+              className="hero-portfolio-card relative rounded-[32px] border border-[rgba(0,255,174,0.12)] bg-[radial-gradient(circle_at_center,rgba(0,255,170,0.12)_0%,rgba(0,255,170,0.04)_40%,transparent_75%),rgba(16,45,40,0.55)] backdrop-blur-xl overflow-hidden p-6"
               style={{ boxShadow: "0 0 40px rgba(0,255,170,0.08), 0 0 80px rgba(0,255,170,0.04)" }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-cyan-500/3 to-transparent pointer-events-none rounded-[28px]" />
@@ -682,7 +809,7 @@ export default function Page() {
                 </div>
 
                 <div className="mt-4 w-full h-auto">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="hero-portfolio-grid grid grid-cols-2 gap-4">
                     <div className="col-span-1">
                       <div className="relative flex h-28 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/6 bg-[rgba(20,30,35,0.65)] p-4 shadow-[0_10px_30px_rgba(2,6,23,0.6)] backdrop-blur-sm">
                         <div className="flex items-center justify-between">
@@ -1068,5 +1195,6 @@ export default function Page() {
         </div>
       </footer>
     </main>
+    </>
   )
 }
