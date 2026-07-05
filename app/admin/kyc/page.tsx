@@ -135,14 +135,25 @@ export default function KycPage() {
         return nextRequests
       })
 
-      // also update users table kyc_status for the user
-      const userId = reqData.user_id
+      // also update the matching users row by auth id or email so the profile reflects the change
       const payload: any = { kyc_status: nextStatus }
       if (nextStatus === 'approved') payload.kyc_verified_at = nextUpdatedAt
       else payload.kyc_verified_at = null
 
-      const { error: uErr } = await supabase.from('users').update(payload).eq('id', userId)
-      if (uErr) console.warn('Failed to update users.kyc_status', uErr)
+      const userId = reqData.user_id
+      let userError: any = null
+      if (userId) {
+        const { error: idErr } = await supabase.from('users').update(payload).eq('id', userId)
+        userError = idErr
+      }
+
+      if (userError && reqData.email) {
+        const { error: emailErr } = await supabase.from('users').update(payload).eq('email', reqData.email)
+        userError = emailErr
+      }
+
+      console.log('KYC approval applied', { id, nextStatus, userId, email: reqData.email, userError })
+      if (userError) console.warn('Failed to update users.kyc_status', userError)
     } catch (e) {
       console.warn('updateKycStatus error', e)
       setUpdatingId(null)

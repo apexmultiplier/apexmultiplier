@@ -58,6 +58,15 @@ function DepositView() {
 
   useEffect(() => {
     async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user?.email) {
+        setUserEmail(user.email)
+        return
+      }
+
       // If email was passed by signup (URL param) prefer that and persist it for the session
       if (selectedEmail) {
         try {
@@ -69,7 +78,7 @@ function DepositView() {
         return
       }
 
-      // fallback to any stored signup email
+      // fallback to any stored signup email for unauthenticated visitors
       try {
         const stored = sessionStorage.getItem("apex_signup_email")
         if (stored) {
@@ -77,22 +86,6 @@ function DepositView() {
           return
         }
       } catch (e) {}
-
-      // last fallback: use authenticated user email if available
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      console.log('handleDeposit - current user:', user)
-
-      if (!user) {
-        setError('Please login first to submit deposit and upload screenshot')
-        setLoading(false)
-        return
-      }
-
-      if (user?.email) {
-        setUserEmail(user.email)
-      }
     }
 
     loadUser()

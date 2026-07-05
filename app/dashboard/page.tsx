@@ -184,14 +184,44 @@ export default function DashboardPage() {
   const [completedTrades, setCompletedTrades] = useState(0)
   const [portfolioValue, setPortfolioValue] = useState(0)
 
+  const refreshDashboard = () => {
+    void loadDashboard()
+  }
+
   useEffect(() => {
-    loadDashboard()
+    if (typeof window !== "undefined") {
+      const pendingRefresh = sessionStorage.getItem("apex_dashboard_refresh")
+      if (pendingRefresh) {
+        sessionStorage.removeItem("apex_dashboard_refresh")
+      }
+    }
+
+    void loadDashboard()
 
     const clock = setInterval(() => {
       setCurrentTime(new Date().toLocaleString())
     }, 1000)
 
     return () => clearInterval(clock)
+  }, [])
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshDashboard()
+    }
+
+    const handleStorageRefresh = (event: StorageEvent) => {
+      if (event.key === "apex_dashboard_refresh") {
+        refreshDashboard()
+      }
+    }
+
+    window.addEventListener("dashboard:refresh", handleRefresh)
+    window.addEventListener("storage", handleStorageRefresh)
+    return () => {
+      window.removeEventListener("dashboard:refresh", handleRefresh)
+      window.removeEventListener("storage", handleStorageRefresh)
+    }
   }, [])
 
   // subscribe to deposit changes so dashboard updates instantly after admin actions
@@ -258,19 +288,32 @@ export default function DashboardPage() {
 
       setUserEmail(user.email || "")
       setUserId(user.id)
-      const storedFull = typeof window !== "undefined" ? sessionStorage.getItem("apex_full_name") : null
+      const storedFull = typeof window !== "undefined" ? sessionStorage.getItem(`apex_full_name_${user.id}`) : null
       setUserName(
         storedFull || user.user_metadata?.full_name || user.email || "Investor"
       )
 
-      const { data: profileData } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", user.email)
-        .single()
+      let profileData: any = null
+      try {
+        const { data: profileById } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+        profileData = profileById || null
+      } catch (profileError) {
+        if (user.email) {
+          const { data: profileByEmail } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", user.email)
+            .single()
+          profileData = profileByEmail || null
+        }
+      }
 
       if (profileData) {
-        const storedFull2 = typeof window !== "undefined" ? sessionStorage.getItem("apex_full_name") : null
+        const storedFull2 = typeof window !== "undefined" ? sessionStorage.getItem(`apex_full_name_${user.id}`) : null
         setUserName(
           storedFull2 || profileData.full_name || user.user_metadata?.full_name || user.email || "Investor"
         )
@@ -622,14 +665,16 @@ export default function DashboardPage() {
         totalBonusAmount = 0
       }
 
-      const totalWithdrawAmount =
-        withdrawals?.reduce((sum: number, item: any) => {
+      const totalProfitWithdrawn =
+        (withdrawals || []).reduce((sum: number, item: any) => {
           if (item.status === "rejected") return sum
+          const isPrincipal = item.withdrawal_type === "principal" || item.package_id != null || item.package_name != null
+          if (isPrincipal) return sum
           return sum + Number(item.amount || 0)
         }, 0) || 0
 
-      // Per requirements: Withdrawable Profit = sum(current profits)
-      const withdrawable = Number(totalEarned || 0)
+      // Per requirements: Withdrawable Profit = earned profit + bonuses - profit withdrawals
+      const withdrawable = Math.max(Number((totalEarned + totalBonusAmount - totalProfitWithdrawn).toFixed(2)), 0)
       // Portfolio Value = sum of all investments
       const portfolioVal = Number(totalDepositSum || 0)
 
@@ -672,9 +717,9 @@ export default function DashboardPage() {
       // Derive email verification status from the email_verification_requests table
       try {
         const { data: evData } = await supabase
-          .from("verification_requests")
+          .from("email_verification_requests")
           .select("*")
-          .eq("email", user.email)
+          .or(`user_id.eq.${user.id},email.eq.${user.email}`)
           .order("id", { ascending: false })
           .limit(1)
 

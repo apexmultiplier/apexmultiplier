@@ -63,11 +63,18 @@ export async function POST(req: Request) {
       }
 
       try {
-        const userQuery = admin.from('users').update(userPayload)
-        const { error: userError } = requestRow.user_id
-          ? await userQuery.eq('id', requestRow.user_id)
-          : await userQuery.eq('email', requestRow.email)
+        let userError: any = null
+        if (requestRow.user_id) {
+          const idResult = await admin.from('users').update(userPayload).eq('id', requestRow.user_id)
+          userError = idResult.error
+        }
 
+        if (userError && requestRow.email) {
+          const emailResult = await admin.from('users').update(userPayload).eq('email', requestRow.email)
+          userError = emailResult.error
+        }
+
+        console.log('Email verification approval user sync', { requestId, nextStatus, userId: requestRow.user_id, email: requestRow.email, userError })
         if (userError) {
           console.warn('email verification user sync warning', userError)
         }

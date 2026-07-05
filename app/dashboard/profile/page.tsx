@@ -14,6 +14,12 @@ function generateShortId(id: string) {
     .padEnd(6, "X")
 }
 
+interface KycRealtimeRow {
+  user_id?: string
+  email?: string
+  [key: string]: unknown
+}
+
 function normalizeDob(value: string) {
   if (!value) return ""
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
@@ -60,8 +66,66 @@ export default function DashboardProfilePage() {
   const [logoutLoading, setLogoutLoading] = useState(false)
 
   useEffect(() => {
-    loadProfile()
+    void loadProfile()
   }, [])
+
+  useEffect(() => {
+    if (!userId) return
+
+    const channel = supabase
+      .channel("profile-verification-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "kyc_requests" },
+        (payload) => {
+          const newRow = payload.new as KycRealtimeRow | null
+          const oldRow = payload.old as KycRealtimeRow | null
+          const changedUserId = newRow?.user_id || oldRow?.user_id
+          const changedEmail = newRow?.email || oldRow?.email
+          if (changedUserId === userId || changedEmail === email) {
+            void loadProfile()
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "email_verification_requests" },
+        (payload) => {
+          const newRow = payload.new as KycRealtimeRow | null
+          const oldRow = payload.old as KycRealtimeRow | null
+          const changedUserId = newRow?.user_id || oldRow?.user_id
+          const changedEmail = newRow?.email || oldRow?.email
+          if (changedUserId === userId || changedEmail === email) {
+            void loadProfile()
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [userId, email])
+
+  const ensureUserProfileRecord = async (user: any) => {
+    if (!user?.id || !user?.email) return
+
+    try {
+      const payload = {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email || "Investor",
+        unique_id: generateShortId(user.id),
+      }
+
+      const { error } = await supabase.from("users").upsert(payload, { onConflict: "id" })
+      if (error) {
+        console.warn("ensureUserProfileRecord warning", error)
+      }
+    } catch (e) {
+      console.warn("ensureUserProfileRecord error", e)
+    }
+  }
 
   const loadProfile = async () => {
     const {
@@ -75,13 +139,29 @@ export default function DashboardProfilePage() {
 
     setEmail(user.email || "")
     setUserId(user.id)
-    setUserName(user.user_metadata?.full_name || user.email || "Investor")
+    const storedFull = typeof window !== "undefined" ? sessionStorage.getItem(`apex_full_name_${user.id}`) : null
+    setUserName(storedFull || user.user_metadata?.full_name || user.email || "Investor")
 
-    const { data: profileData } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", user.email)
-      .single()
+    await ensureUserProfileRecord(user)
+
+    let profileData: any = null
+    try {
+      const { data: profileById } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single()
+      profileData = profileById || null
+    } catch (profileError) {
+      if (user.email) {
+        const { data: profileByEmail } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", user.email)
+          .single()
+        profileData = profileByEmail || null
+      }
+    }
 
     if (profileData) {
       // populate first/last name if available, fallback from full_name
@@ -191,8 +271,11 @@ export default function DashboardProfilePage() {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       }
 
+      console.log("Submitting email verification request", { userId: user.id, email: user.email })
       console.log("Generated OTP:", otp)
       console.log("Payload:", payload)
+
+      await ensureUserProfileRecord(user)
 
       const { data, error } = await supabase.from("email_verification_requests").insert([payload])
 
@@ -203,9 +286,11 @@ export default function DashboardProfilePage() {
         return
       }
 
+      console.log("Email verification request inserted", data)
       setEmailVerificationStatus("Pending")
       const inserted = data as any[] | null
       if (inserted && inserted[0] && inserted[0].id) setEmailVerificationRequestId(inserted[0].id)
+      await loadProfile()
       alert("Verification request created. Admin will review.")
     } catch (e) {
       console.error(e)
@@ -251,7 +336,9 @@ export default function DashboardProfilePage() {
     try {
       await supabase.auth.updateUser({ data: { user_metadata: { full_name: fullName } } })
       try {
-        sessionStorage.setItem("apex_full_name", fullName)
+        if (user.id) {
+          sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
+        }
       } catch (e) {
         // ignore
       }
@@ -307,9 +394,15 @@ export default function DashboardProfilePage() {
     try {
       await supabase.auth.updateUser({ data: { user_metadata: { full_name: fullName } } })
       try {
-        sessionStorage.setItem("apex_full_name", fullName)
-      } catch (e) {}
-    } catch (e) {}
+        if (user.id) {
+          sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
+        }
+      } catch (e) {
+        // ignore storage errors
+      }
+    } catch (e) {
+      // ignore metadata update errors
+    }
 
     if (error) {
       console.log(error)
@@ -367,6 +460,9 @@ export default function DashboardProfilePage() {
 
     // Insert KYC record into the existing `kyc_requests` table (required schema fields).
     try {
+      console.log("Submitting KYC request", { userId: user.id, email: user.email, country })
+      await ensureUserProfileRecord(user)
+
       const { data: kData, error: kErr } = await supabase.from("kyc_requests").insert([
         {
           user_id: user.id,
@@ -388,7 +484,9 @@ export default function DashboardProfilePage() {
         return
       }
 
+      console.log("KYC request inserted", kData)
       setKycStatus("Pending")
+      await loadProfile()
       alert("KYC submitted. Admin will verify your documents soon.")
     } catch (e) {
       console.error("KYC submit error:", e)
@@ -431,7 +529,9 @@ export default function DashboardProfilePage() {
                   try {
                     await supabase.auth.signOut()
                     try {
-                      sessionStorage.removeItem('apex_full_name')
+                      if (userId) {
+                        sessionStorage.removeItem(`apex_full_name_${userId}`)
+                      }
                       sessionStorage.removeItem('apex_signup_email')
                     } catch (e) {}
                     router.push('/login')

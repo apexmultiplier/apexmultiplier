@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { usePlans } from "@/lib/plans"
 
@@ -30,6 +31,7 @@ export default function SignupClient() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState(false)
   const [availablePlansState, setAvailablePlansState] = useState<Array<any>>([])
   const [plansLoadError, setPlansLoadError] = useState<string | null>(null)
   const lastAttemptRef = useRef<number | null>(null)
@@ -47,6 +49,44 @@ export default function SignupClient() {
     // mirror provider plans into local state shape used by signup UI
     setAvailablePlansState((availablePlans || []).map((p: any) => ({ title: p.title, amount: p.amount, raw: p.raw })))
   }, [availablePlans])
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
+
+  const loginWithGoogle = async () => {
+    setOauthLoading(true)
+    try {
+      const redirectTo = (typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || '') + '/dashboard'
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      })
+
+      console.log('Google OAuth start:', { data, error })
+
+      if (error) {
+        console.error('Google OAuth Error:', error)
+        const msg = (error.message || '').toLowerCase()
+        if (msg.includes('missing oauth secret') || (error as any)?.error_code === 'validation_failed') {
+          alert('Google sign-in is not configured for this environment. Please use Email/Password signup or contact support.')
+        } else {
+          alert('Unable to start Google sign-up. Please try again or use Email/Password signup.')
+        }
+      }
+    } catch (err: any) {
+      console.error('Unexpected error during Google sign-in:', err)
+      alert('Unable to start Google sign-up. Please try again or use Email/Password signup.')
+    } finally {
+      setOauthLoading(false)
+    }
+  }
 
   const validate = () => {
     // basic email format validation
@@ -174,7 +214,15 @@ export default function SignupClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020406] text-white flex items-center justify-center p-6">
+    <div className="relative min-h-screen bg-[#020406] text-white flex items-center justify-center p-6">
+      <button
+        type="button"
+        onClick={handleBack}
+        className="absolute top-4 left-4 z-30 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-white/10 px-4 py-2 text-sm font-semibold text-emerald-200 shadow-[0_0_30px_rgba(16,185,129,0.18)] backdrop-blur-xl transition hover:bg-white/20 hover:shadow-[0_0_30px_rgba(16,185,129,0.28)]"
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
       <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-[30px] p-8 shadow-[0_0_70px_rgba(0,255,174,0.12)]">
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -190,6 +238,22 @@ export default function SignupClient() {
         </div>
 
         <div className="grid gap-6">
+          <div className="grid gap-3">
+            <button
+              type="button"
+              onClick={loginWithGoogle}
+              disabled={oauthLoading}
+              className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-white/20 bg-white/90 px-6 py-4 text-sm font-semibold text-black shadow-[0_0_30px_rgba(255,255,255,0.12)] transition hover:bg-white hover:shadow-[0_0_35px_rgba(16,185,129,0.24)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M23.49 12.23c0-.82-.07-1.61-.21-2.37H12v4.48h6.54c-.28 1.45-1.12 2.68-2.39 3.5v2.91h3.87c2.27-2.09 3.58-5.18 3.58-8.52Z" fill="#4285F4" />
+                <path d="M12 24c3.24 0 5.96-1.08 7.95-2.92l-3.87-2.91c-1.08.72-2.45 1.15-4.08 1.15-3.14 0-5.8-2.12-6.75-4.98H1.35v3.12C3.28 21.76 7.36 24 12 24Z" fill="#34A853" />
+                <path d="M5.25 14.34c-.24-.72-.38-1.5-.38-2.34s.14-1.62.38-2.34V6.54H1.35A11.97 11.97 0 0 0 0 12c0 1.92.46 3.73 1.35 5.46l3.9-3.12Z" fill="#FBBC05" />
+                <path d="M12 4.76c1.77 0 3.36.61 4.61 1.81l3.45-3.45C17.96 1.05 15.24 0 12 0 7.36 0 3.28 2.24 1.35 5.54l3.9 3.12C6.2 6.88 8.86 4.76 12 4.76Z" fill="#EA4335" />
+              </svg>
+              {oauthLoading ? "Continue with Google..." : "Continue with Google"}
+            </button>
+          </div>
           <form
             onSubmit={onSubmit}
             onKeyDown={(e) => {
