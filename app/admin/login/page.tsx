@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-6">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-black/40 p-8">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-black/40 p-8">
         <h1 className="text-4xl font-black text-center">Admin Login</h1>
         <p className="text-zinc-400 text-center mt-2">Sign in to access the admin dashboard.</p>
         <div className="mt-8 space-y-5">

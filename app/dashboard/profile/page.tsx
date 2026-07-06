@@ -56,6 +56,7 @@ export default function DashboardProfilePage() {
   const [govtIdName, setGovtIdName] = useState("")
   const [govtIdNumber, setGovtIdNumber] = useState("")
   const [country, setCountry] = useState("")
+  const [countryField, setCountryField] = useState<"country" | "country_of_residence" | null>(null)
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [selfiePreview, setSelfiePreview] = useState("")
   const [saving, setSaving] = useState(false)
@@ -112,19 +113,67 @@ export default function DashboardProfilePage() {
 
     try {
       const payload = {
-        id: user.id,
+        user_id: user.id,
         email: user.email,
         full_name: user.user_metadata?.full_name || user.email || "Investor",
         unique_id: generateShortId(user.id),
       }
 
-      const { error } = await supabase.from("users").upsert(payload, { onConflict: "id" })
-      if (error) {
-        console.warn("ensureUserProfileRecord warning", error)
+      const { data: existing, error: selectError } = await supabase
+        .from("users")
+        .select("*")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+
+      if (selectError) {
+        console.warn("ensureUserProfileRecord select warning", selectError)
+      }
+
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from("users")
+          .update(payload)
+          .eq("id", existing.id)
+
+        if (updateError) {
+          console.warn("ensureUserProfileRecord update warning", updateError)
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from("users")
+          .insert(payload)
+
+        if (insertError) {
+          console.warn("ensureUserProfileRecord insert warning", insertError)
+        }
       }
     } catch (e) {
       console.warn("ensureUserProfileRecord error", e)
     }
+  }
+
+  const detectCountryColumn = async (userId: string) => {
+    const columns = ["country", "country_of_residence"] as const
+
+    for (const column of columns) {
+      const { error } = await supabase
+        .from("users")
+        .select(column)
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle()
+
+      if (!error) {
+        return column
+      }
+
+      const message = String(error?.message || error?.details || "").toLowerCase()
+      if (!message.includes("column") && !message.includes("does not exist")) {
+        return column
+      }
+    }
+
+    return null
   }
 
   const loadProfile = async () => {
@@ -144,23 +193,24 @@ export default function DashboardProfilePage() {
 
     await ensureUserProfileRecord(user)
 
+    const resolvedCountryField = await detectCountryColumn(user.id)
+    setCountryField(resolvedCountryField)
+
     let profileData: any = null
     try {
-      const { data: profileById } = await supabase
+      const { data: profileByUser } = await supabase
         .from("users")
         .select("*")
-        .eq("id", user.id)
-        .single()
-      profileData = profileById || null
-    } catch (profileError) {
-      if (user.email) {
-        const { data: profileByEmail } = await supabase
-          .from("users")
-          .select("*")
-          .eq("email", user.email)
-          .single()
-        profileData = profileByEmail || null
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+
+      profileData = profileByUser || null
+
+      if (profileData && !profileData.user_id) {
+        await supabase.from("users").update({ user_id: user.id }).eq("id", profileData.id)
       }
+    } catch (profileError) {
+      console.warn("loadProfile public.users lookup warning", profileError)
     }
 
     if (profileData) {
@@ -193,13 +243,18 @@ export default function DashboardProfilePage() {
           (profileData.govt_id_number ? "Pending" : "Not Started")
       )
       setGovtIdName(
-        profileData.govt_id_name || profileData.full_name || ""
+        profileData.full_name || ""
       )
-        setGovtIdNumber(
-          profileData.govt_id_number || profileData.govt_id || ""
-        )
-        setCountry(profileData.country || profileData.country_of_residence || "")
-        setSelfiePreview(profileData.kyc_selfie_url || "")
+      setGovtIdNumber(
+        profileData.govt_id_number || profileData.govt_id || ""
+      )
+      setCountry(
+        (resolvedCountryField && profileData[resolvedCountryField]) ||
+          profileData.country ||
+          profileData.country_of_residence ||
+          ""
+      )
+      setSelfiePreview(profileData.document_url || profileData.document_back || "")
     } else {
       setUniqueId(generateShortId(user.id))
     }
@@ -315,36 +370,43 @@ export default function DashboardProfilePage() {
 
     const fullName = `${firstName ? firstName : ""}${firstName && lastName ? " " : ""}${lastName ? lastName : userName}`.trim()
 
-    const { error } = await supabase
-      .from("users")
-      .upsert(
-        {
-          email: user.email,
-          first_name: firstName,
-          last_name: lastName,
-          full_name: fullName,
-          mobile_number: mobileNumber,
-          dob: dob,
-          withdraw_network: withdrawNetwork,
-          wallet_address: walletAddress,
-          unique_id: uniqueId || generateShortId(user.id),
-        },
-        { onConflict: "email" }
-      )
+    const payloadAny: any = { user_id: user.id, email: user.email, unique_id: uniqueId || generateShortId(user.id) }
+    if (firstName) payloadAny.first_name = firstName
+    if (lastName) payloadAny.last_name = lastName
+    if (fullName) payloadAny.full_name = fullName
+    if (mobileNumber) payloadAny.mobile_number = mobileNumber
+    if (dob) payloadAny.dob = dob
+    if (withdrawNetwork) payloadAny.withdraw_network = withdrawNetwork
+    if (walletAddress) payloadAny.wallet_address = walletAddress
 
-    // also update auth user metadata for immediate reflection
-    try {
-      await supabase.auth.updateUser({ data: { user_metadata: { full_name: fullName } } })
-      try {
-        if (user.id) {
-          sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
-        }
-      } catch (e) {
-        // ignore
-      }
-    } catch (e) {
-      // ignore metadata update errors
+    let { data: existing, error: selectError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+      .maybeSingle()
+
+    if (selectError) {
+      console.log(selectError)
     }
+
+    if (!existing) {
+      await ensureUserProfileRecord(user)
+      const result = await supabase
+        .from('users')
+        .select('id')
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+      existing = result.data
+    }
+
+    if (!existing) {
+      alert('Unable to save profile: profile record not found.')
+      setSaving(false)
+      return
+    }
+
+    const updateRes = await supabase.from('users').update(payloadAny).eq('id', existing.id)
+    const error = updateRes.error
 
     if (error) {
       console.log(error)
@@ -352,8 +414,21 @@ export default function DashboardProfilePage() {
       setSaving(false)
       return
     }
-
+    // update UI and notify other parts of the app
     setUserName(fullName || userName)
+    try {
+      if (user.id) {
+        sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // dispatch a profile update event so other pages can sync immediately
+    try {
+      window.dispatchEvent(new CustomEvent('apex:profile_updated', { detail: { userId: user.id, firstName, lastName, fullName, mobileNumber, dob, walletAddress, withdrawNetwork } }))
+    } catch (e) {}
+
     alert("Profile and withdrawal details saved successfully.")
     setSaving(false)
   }
@@ -373,36 +448,43 @@ export default function DashboardProfilePage() {
 
     const fullName = `${firstName ? firstName : ""}${firstName && lastName ? " " : ""}${lastName ? lastName : userName}`.trim()
 
-    const { error } = await supabase
-      .from("users")
-      .upsert(
-        {
-          email: user.email,
-          first_name: firstName,
-          last_name: lastName,
-          full_name: fullName,
-          mobile_number: mobileNumber,
-          dob: dob,
-          withdraw_network: withdrawNetwork,
-          wallet_address: walletAddress,
-          unique_id: uniqueId || generateShortId(user.id),
-        },
-        { onConflict: "email" }
-      )
+    const payloadAny2: any = { user_id: user.id, email: user.email, unique_id: uniqueId || generateShortId(user.id) }
+    if (firstName) payloadAny2.first_name = firstName
+    if (lastName) payloadAny2.last_name = lastName
+    if (fullName) payloadAny2.full_name = fullName
+    if (mobileNumber) payloadAny2.mobile_number = mobileNumber
+    if (dob) payloadAny2.dob = dob
+    if (withdrawNetwork) payloadAny2.withdraw_network = withdrawNetwork
+    if (walletAddress) payloadAny2.wallet_address = walletAddress
 
-    // update auth metadata and session storage for immediate reflection
-    try {
-      await supabase.auth.updateUser({ data: { user_metadata: { full_name: fullName } } })
-      try {
-        if (user.id) {
-          sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
-        }
-      } catch (e) {
-        // ignore storage errors
-      }
-    } catch (e) {
-      // ignore metadata update errors
+    let { data: existing, error: selectError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+      .maybeSingle()
+
+    if (selectError) {
+      console.log(selectError)
     }
+
+    if (!existing) {
+      await ensureUserProfileRecord(user)
+      const result = await supabase
+        .from('users')
+        .select('id')
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+      existing = result.data
+    }
+
+    if (!existing) {
+      alert('Unable to save profile: profile record not found.')
+      setSaving(false)
+      return
+    }
+
+    const updateRes = await supabase.from('users').update(payloadAny2).eq('id', existing.id)
+    const error = updateRes.error
 
     if (error) {
       console.log(error)
@@ -412,6 +494,15 @@ export default function DashboardProfilePage() {
     }
 
     setUserName(fullName || userName)
+    try {
+      if (user.id) sessionStorage.setItem(`apex_full_name_${user.id}`, fullName)
+    } catch (e) {}
+
+    // dispatch profile update for realtime sync
+    try {
+      window.dispatchEvent(new CustomEvent('apex:profile_updated', { detail: { userId: user.id, firstName, lastName, fullName, mobileNumber, dob, walletAddress, withdrawNetwork } }))
+    } catch (e) {}
+
     setSuccessMessage("Profile details updated successfully")
     if (successTimerRef.current) window.clearTimeout(successTimerRef.current)
     successTimerRef.current = window.setTimeout(() => setSuccessMessage(""), 3000)
@@ -458,33 +549,104 @@ export default function DashboardProfilePage() {
       }
     }
 
-    // Insert KYC record into the existing `kyc_requests` table (required schema fields).
+    // Persist KYC state in public.users and upsert the related kyc_requests row.
     try {
       console.log("Submitting KYC request", { userId: user.id, email: user.email, country })
-      await ensureUserProfileRecord(user)
 
-      const { data: kData, error: kErr } = await supabase.from("kyc_requests").insert([
-        {
-          user_id: user.id,
-          email: user.email,
-          full_name: userName,
-          country: country,
-          government_id_number: govtIdNumber,
-          document_type: "selfie",
-          document_front: selfieUrl,
-          document_back: null,
-          status: "pending",
-        },
-      ])
-
-      if (kErr) {
-        console.error("Failed to insert kyc_requests:", kErr)
-        alert("Failed to submit KYC: " + (kErr.message || "unknown error"))
-        setKycSaving(false)
-        return
+      let resolvedCountryField = countryField
+      if (!resolvedCountryField) {
+        resolvedCountryField = await detectCountryColumn(user.id)
+        setCountryField(resolvedCountryField)
       }
 
-      console.log("KYC request inserted", kData)
+      const profilePayload: any = {
+        user_id: user.id,
+        email: user.email,
+        full_name: userName,
+        unique_id: uniqueId || generateShortId(user.id),
+        kyc_status: "pending",
+      }
+
+      if (resolvedCountryField) {
+        profilePayload[resolvedCountryField] = country
+      }
+
+      const { data: existingProfile, error: profileSelectError } = await supabase
+        .from("users")
+        .select("id")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+
+      if (profileSelectError) {
+        console.warn("submitKyc profile lookup error", profileSelectError)
+      }
+
+      if (existingProfile) {
+        const { error: profileUpdateError } = await supabase
+          .from("users")
+          .update(profilePayload)
+          .eq("id", existingProfile.id)
+
+        if (profileUpdateError) {
+          console.error("Failed to update public.users for KYC:", profileUpdateError)
+          alert("Failed to submit KYC: " + (profileUpdateError.message || "unknown error"))
+          setKycSaving(false)
+          return
+        }
+      } else {
+        const { error: profileInsertError } = await supabase.from("users").insert(profilePayload)
+        if (profileInsertError) {
+          console.error("Failed to insert public.users for KYC:", profileInsertError)
+          alert("Failed to submit KYC: " + (profileInsertError.message || "unknown error"))
+          setKycSaving(false)
+          return
+        }
+      }
+
+      const kycPayload: any = {
+        user_id: user.id,
+        email: user.email,
+        full_name: govtIdName,
+        govt_id_name: govtIdName,
+        govt_id_number: govtIdNumber,
+        country: country,
+        document_url: selfieUrl,
+        status: "pending",
+      }
+
+      const { data: existingKyc, error: kycSelectError } = await supabase
+        .from("kyc_requests")
+        .select("id")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle()
+
+      if (kycSelectError) {
+        console.warn("submitKyc kyc_requests lookup error", kycSelectError)
+      }
+
+      if (existingKyc) {
+        const { error: kErr } = await supabase
+          .from("kyc_requests")
+          .update({ ...kycPayload, updated_at: new Date().toISOString() })
+          .eq("id", existingKyc.id)
+
+        if (kErr) {
+          console.error("Failed to update kyc_requests:", kErr)
+          alert("Failed to submit KYC: " + (kErr.message || "unknown error"))
+          setKycSaving(false)
+          return
+        }
+      } else {
+        const { data: kData, error: kErr } = await supabase.from("kyc_requests").insert([kycPayload])
+        if (kErr) {
+          console.error("Failed to insert kyc_requests:", kErr)
+          alert("Failed to submit KYC: " + (kErr.message || "unknown error"))
+          setKycSaving(false)
+          return
+        }
+        console.log("KYC request inserted", kData)
+      }
+
       setKycStatus("Pending")
       await loadProfile()
       alert("KYC submitted. Admin will verify your documents soon.")
@@ -558,31 +720,28 @@ export default function DashboardProfilePage() {
                 className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden border border-emerald-400/20"
                 style={{ boxShadow: "0 0 18px rgba(16,185,129,0.06)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {selfiePreview ? (
-                  <img src={selfiePreview} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
-                    <defs>
-                      <linearGradient id="avatarGrad" x1="0" x2="1" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#02120f" />
-                        <stop offset="60%" stopColor="#05221a" />
-                        <stop offset="100%" stopColor="#06302a" />
-                      </linearGradient>
-                      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
-                        <feMerge>
-                          <feMergeNode in="coloredBlur" />
-                          <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                      </filter>
-                    </defs>
+                {/* Always show the Dollar symbol avatar in the dashboard; KYC selfie is stored separately for admin verification only. */}
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
+                  <defs>
+                    <linearGradient id="avatarGrad" x1="0" x2="1" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#02120f" />
+                      <stop offset="60%" stopColor="#05221a" />
+                      <stop offset="100%" stopColor="#06302a" />
+                    </linearGradient>
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
 
-                    <g filter="url(#glow)">
-                      <circle cx="50" cy="50" r="46" fill="url(#avatarGrad)" stroke="#0f766e" strokeOpacity="0.18" strokeWidth="2" />
-                      <text x="50" y="50" textAnchor="middle" fontSize="46" fontWeight="700" fill="#D4AF37" dominantBaseline="middle" style={{ textShadow: '0 0 8px rgba(212,175,55,0.45)' }}>$</text>
-                    </g>
-                  </svg>
-                )}
+                  <g filter="url(#glow)">
+                    <circle cx="50" cy="50" r="46" fill="url(#avatarGrad)" stroke="#0f766e" strokeOpacity="0.18" strokeWidth="2" />
+                    <text x="50" y="50" textAnchor="middle" fontSize="46" fontWeight="700" fill="#D4AF37" dominantBaseline="middle" style={{ textShadow: '0 0 8px rgba(212,175,55,0.45)' }}>$</text>
+                  </g>
+                </svg>
               </div>
             <div className="flex-1">
               <div className="text-sm text-zinc-400">Account</div>

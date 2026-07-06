@@ -11,11 +11,8 @@ interface KycRecord {
   email: string
   full_name?: string
   unique_id?: string
-  govt_id_name?: string
-  govt_id_number?: string
   government_id_number?: string
   document_url?: string
-  document_type?: string
   document_front?: string
   document_back?: string
   country?: string
@@ -36,15 +33,12 @@ const normalizeKycRecord = (row: any): KycRecord => ({
   id: row?.id,
   user_id: row?.user_id ?? row?.userId ?? undefined,
   email: row?.email ?? row?.userEmail ?? row?.user_email ?? '',
-  full_name: row?.full_name ?? row?.userName ?? row?.name ?? row?.user_name ?? '',
+  full_name: row?.full_name ?? row?.govt_id_name ?? row?.userName ?? row?.name ?? row?.user_name ?? '',
   unique_id: row?.unique_id ?? row?.uid ?? row?.user_id ?? '',
-  govt_id_name: row?.govt_id_name ?? row?.idType ?? row?.document_type ?? undefined,
-  govt_id_number: row?.govt_id_number ?? row?.government_id_number ?? row?.idNumber ?? row?.govtIdNumber ?? undefined,
-  government_id_number: row?.government_id_number ?? row?.govt_id_number ?? row?.idNumber ?? row?.govtIdNumber ?? undefined,
-  document_url: row?.document_url ?? row?.documentUrl ?? row?.document ?? undefined,
-  document_type: row?.document_type ?? row?.govt_id_name ?? row?.idType ?? undefined,
+  government_id_number: row?.govt_id_number ?? row?.govtIdNumber ?? row?.idNumber ?? undefined,
+  document_url: row?.document_url ?? row?.documentUrl ?? row?.document_front ?? row?.documentFront ?? row?.front_document ?? undefined,
   document_front: row?.document_front ?? row?.documentFront ?? row?.front_document ?? row?.document_url ?? undefined,
-  document_back: row?.document_back ?? row?.documentBack ?? row?.back_document ?? undefined,
+  document_back: row?.document_back ?? row?.documentBack ?? row?.back_document ?? row?.document_url ?? undefined,
   country: row?.country ?? row?.country_of_residence ?? row?.userCountry ?? '',
   status: normalizeKycStatus(row?.status ?? row?.kyc_status ?? row?.verification_status),
   created_at: row?.created_at ?? row?.createdAt ?? new Date().toISOString(),
@@ -79,16 +73,29 @@ export default function KycPage() {
   const loadKyc = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data: allData, error: allError } = await supabase
         .from("kyc_requests")
         .select("*")
         .order("created_at", { ascending: false })
 
-      if (error) throw error
+      if (allError) throw allError
 
-      const normalizedRequests = (data || []).map((row: any) => normalizeKycRecord(row))
+      const normalizedRequests = (allData || []).map((row: any) => normalizeKycRecord(row))
+
+      const { data: pendingData, error: pendingError } = await supabase
+        .from("kyc_requests")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+
+      if (pendingError) {
+        console.warn('loadKyc pending rows error', pendingError)
+      }
+
+      const normalizedPending = (pendingData || []).map((row: any) => normalizeKycRecord(row))
+
       setKycRequests(normalizedRequests)
-      setPendingRequests(normalizedRequests.filter((request) => request.status === 'pending'))
+      setPendingRequests(normalizedPending)
       setApprovedRequests(normalizedRequests.filter((request) => request.status === 'approved'))
       setRejectedRequests(normalizedRequests.filter((request) => request.status === 'rejected'))
     } catch (e) {
@@ -143,7 +150,7 @@ export default function KycPage() {
       const userId = reqData.user_id
       let userError: any = null
       if (userId) {
-        const { error: idErr } = await supabase.from('users').update(payload).eq('id', userId)
+        const { error: idErr } = await supabase.from('users').update(payload).eq('user_id', userId)
         userError = idErr
       }
 
@@ -260,7 +267,7 @@ export default function KycPage() {
                         <th className="text-left py-3 px-4">Email</th>
                         <th className="text-left py-3 px-4">Full Name</th>
                         <th className="text-left py-3 px-4">Country</th>
-                        <th className="text-left py-3 px-4">ID Type</th>
+                        <th className="text-left py-3 px-4">Document</th>
                         <th className="text-left py-3 px-4">ID Number</th>
                         <th className="text-left py-3 px-4">Status</th>
                         <th className="text-left py-3 px-4">Submitted Time</th>
@@ -276,8 +283,8 @@ export default function KycPage() {
                             <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
                             <td className="py-4 px-4">{kyc.full_name || '—'}</td>
                             <td className="py-4 px-4">{kyc.country || '—'}</td>
-                            <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || '—'}</td>
-                            <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || kyc.govt_id_number || '—'}</td>
+                            <td className="py-4 px-4">{kyc.document_url ? 'Uploaded' : '—'}</td>
+                            <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || '—'}</td>
                             <td className="py-4 px-4"><span className="px-3 py-1 rounded-full text-xs bg-amber-500/20 text-amber-400">Pending</span></td>
                             <td className="py-4 px-4 text-zinc-400 text-xs">{date} {time}</td>
                             <td className="py-4 px-4">
@@ -316,7 +323,7 @@ export default function KycPage() {
                         <th className="text-left py-3 px-4">Email</th>
                         <th className="text-left py-3 px-4">Full Name</th>
                         <th className="text-left py-3 px-4">Country</th>
-                        <th className="text-left py-3 px-4">ID Type</th>
+                        <th className="text-left py-3 px-4">Document</th>
                         <th className="text-left py-3 px-4">ID Number</th>
                         <th className="text-left py-3 px-4">Status</th>
                         <th className="text-left py-3 px-4">Approved Time</th>
@@ -329,8 +336,8 @@ export default function KycPage() {
                           <td className="py-4 px-4 text-emerald-400">{kyc.email}</td>
                           <td className="py-4 px-4">{kyc.full_name || '—'}</td>
                           <td className="py-4 px-4">{kyc.country || '—'}</td>
-                          <td className="py-4 px-4">{kyc.document_type || kyc.govt_id_name || '—'}</td>
-                          <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || kyc.govt_id_number || '—'}</td>
+                          <td className="py-4 px-4">{kyc.document_url ? 'Uploaded' : '—'}</td>
+                          <td className="py-4 px-4 text-xs text-zinc-400">{kyc.government_id_number || '—'}</td>
                           <td className="py-4 px-4"><span className="px-3 py-1 rounded-full text-xs bg-emerald-500/20 text-emerald-400">Approved</span></td>
                           <td className="py-4 px-4 text-zinc-400 text-xs">{kyc.updated_at ? new Date(kyc.updated_at).toLocaleString() : (kyc.created_at ? new Date(kyc.created_at).toLocaleString() : '—')}</td>
                         </tr>
@@ -350,16 +357,16 @@ export default function KycPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-zinc-400 text-sm">Front Document</p>
-                    {selected.document_front ? (
+                    {selected.document_front || selected.document_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={selected.document_front} alt="document front" className="w-full rounded-lg mt-2" />
+                      <img src={selected.document_front || selected.document_url} alt="document front" className="w-full rounded-lg mt-2" />
                     ) : (
-                      <div className="text-zinc-400 mt-2">No front document uploaded</div>
+                      <div className="text-zinc-400 mt-2">No document uploaded</div>
                     )}
                     <p className="text-zinc-400 text-sm mt-3">Back Document</p>
-                    {selected.document_back ? (
+                    {selected.document_back || selected.document_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={selected.document_back} alt="document back" className="w-full rounded-lg mt-2" />
+                      <img src={selected.document_back || selected.document_url} alt="document back" className="w-full rounded-lg mt-2" />
                     ) : (
                       <div className="text-zinc-400 mt-2">No back document uploaded</div>
                     )}
@@ -368,9 +375,9 @@ export default function KycPage() {
                   <div>
                     <p className="text-zinc-400 text-sm">ID Details</p>
                     <div className="mt-2 text-sm text-zinc-200">
-                      <div><strong>Name:</strong> {selected.full_name || selected.govt_id_name || '—'}</div>
-                      <div><strong>Number:</strong> {selected.government_id_number || selected.govt_id_number || '—'}</div>
-                      <div><strong>Type:</strong> {selected.document_type || selected.govt_id_name || '—'}</div>
+                      <div><strong>Name:</strong> {selected.full_name || '—'}</div>
+                      <div><strong>Number:</strong> {selected.government_id_number || '—'}</div>
+                      <div><strong>Document:</strong> {selected.document_url ? 'Uploaded' : '—'}</div>
                       <div><strong>UID:</strong> {selected.unique_id || '—'}</div>
                       <div className="mt-2"><strong>Status:</strong> {(selected.status || 'pending').toString().charAt(0).toUpperCase() + (selected.status || 'pending').toString().slice(1)}</div>
                     </div>

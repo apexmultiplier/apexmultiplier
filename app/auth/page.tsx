@@ -71,25 +71,22 @@ export default function AuthPage() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="relative w-full max-w-md rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-2xl p-8 shadow-[0_0_60px_rgba(0,255,178,0.15)]"
+        className="relative w-full max-w-lg rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-2xl p-8 shadow-[0_0_60px_rgba(0,255,178,0.15)]"
       >
 
         {/* Logo */}
 
-        <div className="flex flex-col items-center mb-8">
-
+        <div className="flex items-center gap-3 mb-8">
           <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
             <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
           </div>
 
-          <h1 className="text-3xl font-black mt-5 tracking-wide">
-            Apex Multiplier
-          </h1>
-
-          <p className="text-white/50 mt-2 text-center">
-            AI-Powered Trading Platform
-          </p>
-
+          <div className="flex-1 min-w-max w-max whitespace-nowrap overflow-visible flex items-center">
+            <div>
+              <h1 className="text-3xl font-black tracking-wide whitespace-nowrap">Apex Multiplier</h1>
+              <p className="text-white/50 mt-2">AI-Powered Trading Platform</p>
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}

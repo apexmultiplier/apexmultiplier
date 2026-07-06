@@ -689,9 +689,8 @@ export default function Page() {
                 <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-[linear-gradient(135deg,rgba(0,255,180,0.08),rgba(0,180,255,0.08))] border border-[rgba(0,255,180,0.2)] shadow-[0_0_15px_rgba(0,255,180,0.25),0_0_30px_rgba(0,255,180,0.15)]">
                   <img src="/logo.png" alt="Apex Multiplier" className="w-4/5 h-4/5 object-contain" />
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-zinc-400">Apex</p>
-                  <p className="text-xl font-black uppercase tracking-[0.1em] text-white">Multiplier</p>
+                <div className="flex-1 min-w-max w-max whitespace-nowrap overflow-visible flex items-center">
+                  <p className="text-xl font-black uppercase tracking-[0.1em] text-white whitespace-nowrap">APEX MULTIPLIER</p>
                 </div>
               </div>
 

@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen text-white flex items-center justify-center p-6" style={{background: 'linear-gradient(180deg, #050816 0%, #07111D 30%, #06171B 60%, #050816 100%)'}}>
-      <div className="w-full max-w-md rounded-3xl glass-panel p-8">
+      <div className="w-full max-w-lg rounded-3xl glass-panel p-8">
         <h2 className="text-2xl font-black text-center neon-text">Forgot Password</h2>
         <p className="text-zinc-400 text-center mt-2">Enter your account email and we'll send a password reset link.</p>
 

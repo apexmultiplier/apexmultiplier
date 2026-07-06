@@ -218,9 +218,23 @@ export default function DashboardPage() {
 
     window.addEventListener("dashboard:refresh", handleRefresh)
     window.addEventListener("storage", handleStorageRefresh)
+      const onProfileUpdated = (e: any) => {
+        try {
+          const d = e?.detail || {}
+          if (d.fullName) setUserName(d.fullName)
+          if (d.userId) {
+            try {
+              const stored = sessionStorage.getItem(`apex_full_name_${d.userId}`)
+              if (stored) setUserName(stored)
+            } catch (err) {}
+          }
+        } catch (err) {}
+      }
+      window.addEventListener('apex:profile_updated', onProfileUpdated)
     return () => {
       window.removeEventListener("dashboard:refresh", handleRefresh)
       window.removeEventListener("storage", handleStorageRefresh)
+        window.removeEventListener('apex:profile_updated', onProfileUpdated)
     }
   }, [])
 
@@ -965,10 +979,9 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Apex Multiplier" className="hidden md:block h-12 w-12 rounded-full object-contain self-center" />
               <img src="/logo.png" alt="Apex Multiplier" className="h-10 w-10 rounded-full object-contain md:hidden self-center" />
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-black leading-tight">
-                <span className="whitespace-nowrap">APEX</span>{' '}
-                <span className="block md:inline text-emerald-400 drop-shadow-[0_0_15px_#10b981]">MULTIPLIER</span>
-              </h1>
+              <div className="flex-1 min-w-max w-max whitespace-nowrap overflow-visible flex items-center">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-black leading-tight whitespace-nowrap">APEX MULTIPLIER</h1>
+              </div>
             </div>
             <p className="text-zinc-400 mt-2 text-sm sm:text-base">With Grow Your Financial Assets</p>
           </div>

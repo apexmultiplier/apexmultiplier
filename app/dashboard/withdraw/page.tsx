@@ -126,6 +126,17 @@ export default function WithdrawPage() {
     setLockedPrincipal(principalSum)
     setAvailableBalance(available)
 
+    // load user's saved wallet/network from profile table
+    try {
+      const { data: profile } = await supabase.from('users').select('wallet_address,withdraw_network').eq('user_id', user.id).single()
+      if (profile) {
+        if (profile.wallet_address) setWallet(String(profile.wallet_address))
+        if (profile.withdraw_network) setNetwork(String(profile.withdraw_network))
+      }
+    } catch (e) {
+      // ignore profile fetch errors
+    }
+
     const packageDetails = planList.map((plan) => getPackageStatus(plan, withdrawalList))
     const availablePackages = packageDetails.filter((item) => item.status === "Available")
     const nextUnlockPackage = packageDetails.filter((item) => item.status === "Locked" && item.unlockDate).sort((a, b) => (a.unlockDate!.getTime() - b.unlockDate!.getTime()))[0]
@@ -164,11 +175,22 @@ export default function WithdrawPage() {
   useEffect(() => {
     void loadWithdrawalData()
 
+    const onProfileUpdated = (e: any) => {
+      try {
+        const d = e?.detail || {}
+        if (d.walletAddress) setWallet(d.walletAddress)
+        if (d.withdrawNetwork) setNetwork(d.withdrawNetwork)
+      } catch (err) {}
+    }
+
+    window.addEventListener('apex:profile_updated', onProfileUpdated)
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
+      window.removeEventListener('apex:profile_updated', onProfileUpdated)
     }
   }, [])
 
@@ -388,7 +410,7 @@ export default function WithdrawPage() {
         <ArrowLeft size={16} />
         Back
       </button>
-      <div className="relative z-10 mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="relative z-10 mx-auto max-w-[1500px] px-4 pt-20 pb-6 sm:px-6 lg:px-8 lg:pt-24 lg:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

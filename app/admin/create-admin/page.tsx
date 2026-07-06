@@ -39,7 +39,7 @@ export default function CreateAdminPage() {
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="rounded-3xl border border-white/10 bg-black/40 p-8 max-w-md w-full mx-6">
+      <div className="rounded-3xl border border-white/10 bg-black/40 p-8 max-w-lg w-full mx-6">
         <h1 className="text-3xl font-bold text-center">Create Admin</h1>
         <p className="text-zinc-400 text-center mt-2">Create a new admin account.</p>
         <div className="mt-6 space-y-4">
